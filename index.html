@@ -1,122 +1,311 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>フカヒレ-2025年度ひこロボ</title>
-  <!-- Webフォント読み込み -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --main-color: #d3e3eb;
-      --accent-color: #f5f5f5;
-      --text-color: #333;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>サメ型ドローン「フカヒレ」プロジェクト</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CSS --- */
+        :root {
+            --main-blue: #0077b6;
+            --sub-blue: #ade8f4;
+            --dark-blue: #023e8a;
+            --text-color: #333;
+            --white: #ffffff;
+            --light-gray: #f8f9fa;
+        }
 
-    body {
-      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Segoe UI', sans-serif;
-      font-size: 16px;
-      line-height: 1.8;
-      margin: 0;
-      padding: 0;
-      background-color: var(--accent-color);
-      color: var(--text-color);
-    }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
 
-    header {
-      background-color: var(--main-color);
-      padding: 1rem 2rem;
-      text-align: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
+        /* ナビゲーション */
+        header {
+            background: var(--white);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
 
-    header h1 {
-      margin: 0;
-      font-size: 2rem;
-    }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
 
-    nav ul {
-      list-style: none;
-      padding: 0;
-      margin: 1rem 0 0 0;
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-    }
+        .logo {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--main-blue);
+        }
 
-    nav a {
-      text-decoration: none;
-      color: #335a80;
-      font-weight: bold;
-    }
+        nav ul {
+            list-style: none;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
 
-    main {
-      max-width: 500px;
-      margin: 2rem auto;
-      padding: 1rem;
-      background-color: white;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 80, 160, 0.1);
-    }
+        nav ul li {
+            margin-left: 20px;
+        }
 
-    section {
-      margin-bottom: 2rem;
-    }
+        nav ul li a {
+            text-decoration: none;
+            color: var(--dark-blue);
+            font-weight: bold;
+            transition: color 0.3s;
+        }
 
-    section h2 {
-      border-left: 5px solid var(--main-color);
-      padding-left: 10px;
-      margin-bottom: 0.5rem;
-      color: #335a80;
-    }
+        nav ul li a:hover {
+            color: var(--main-blue);
+        }
 
-    footer {
-      background-color: var(--main-color);
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.9rem;
-      color: #333;
-    }
-  </style>
+        /* ヒーローエリア */
+        .hero {
+            background: linear-gradient(rgba(0,119,182,0.6), rgba(2,62,138,0.7)), url('https://images.unsplash.com/photo-1464800910203-3564e445b1cb?auto=format&fit=crop&q=80&w=2000');
+            background-size: cover;
+            background-position: center;
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            margin-bottom: 0.5rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        /* コンテンツセクション */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 5rem 20px;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            color: var(--main-blue);
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60px;
+            height: 4px;
+            background: var(--main-blue);
+            margin: 15px auto;
+        }
+
+        .content-flex {
+            display: flex;
+            gap: 50px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .text { flex: 1.2; min-width: 300px; }
+
+        .image-box {
+            flex: 0.8;
+            min-width: 300px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .placeholder-text {
+            padding: 80px 20px;
+            text-align: center;
+            color: #6c757d;
+            border: 2px dashed #adb5bd;
+            margin: 10px;
+        }
+
+        /* 技術カード */
+        .bg-light { background-color: var(--light-gray); }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--white);
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: var(--main-blue);
+            margin-top: 0;
+            border-bottom: 2px solid var(--sub-blue);
+            padding-bottom: 10px;
+        }
+
+        /* エピソードセクション */
+        .episode-box {
+            background: var(--white);
+            padding: 3rem;
+            border-radius: 20px;
+            border-left: 10px solid var(--main-blue);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .quote {
+            font-size: 1.1rem;
+            color: #444;
+            line-height: 2;
+            margin-bottom: 1.5rem;
+        }
+
+        /* フッター・将来セクション */
+        .bg-dark {
+            background-color: var(--dark-blue);
+            color: var(--white);
+            text-align: center;
+        }
+
+        .future-btn {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 1rem 2.5rem;
+            background: var(--sub-blue);
+            color: var(--dark-blue);
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 50px;
+            transition: background 0.3s;
+        }
+
+        .future-btn:hover {
+            background: var(--white);
+        }
+
+        footer {
+            background: #012a5e;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero { height: 50vh; }
+            .section-title { font-size: 1.8rem; }
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Team フカヒレ</h1>
-    <nav>
-      <ul>
-        <li><a href="index.html">About</a></li>
-        <li><a href="Activity.html">準備中</a></li>
-        <li><a href="Works.html">準備中</a></li>
-        <li><a href="contact.html">準備中</a></li>
-      </ul>
-    </nav>
-  </header>
 
-  <main>
-    <section id="about">
-      <h2>About Us</h2>
-      <table width="100%">
-        <tr>
-          <td align="center">
-            <img src="same.jpeg" width="50%" height="auto" alt="アイコン">
-          </td>
-        </tr>
-      </table>
+    <header>
+        <nav>
+            <div class="logo">Project フカヒレ</div>
+            <ul>
+                <li><a href="#concept">Concept</a></li>
+                <li><a href="#technology">Technology</a></li>
+                <li><a href="#episode">Episode</a></li>
+                <li><a href="#future">Future</a></li>
+            </ul>
+        </nav>
+    </header>
 
-      <h1>Team フカヒレ<br></h1>
-      <h3>
-        都立産技高専　航空宇宙工学コース草谷研究室　4年生
-      </h3>
-
-      <p>
-        本チームは都立産技高専 航空宇宙工学コース 草谷研究室のゼミ生の4名で構成されたチームです．飛行船タイプの飛行ロボットで一般部門の出場を予定しています！ </br>
-        製作に関する情報は，本ページより随時更新いたします！
-      </p>
+    <section class="hero">
+        <div class="hero-content">
+            <h1>航空工学で人々を笑顔に </h1>
+            <p>サメ型ドローン「フカヒレ」の挑戦 </p>
+        </div>
     </section>
-  </main>
 
-  <footer>
-    <p>&copy; 2025 Kusagaya-Lab/TMCIT</p>
-  </footer>
+    <main>
+        <section id="concept" class="container">
+            <h2 class="section-title">Concept</h2>
+            <div class="content-flex">
+                <div class="text">
+                    <p>人類は古くから空を見上げ、自由に飛ぶことを夢見てきました 。しかし現在、ドローンが実戦兵器として使われるなど、航空技術は本来の「憧れ」から遠ざかりつつあります 。</p>
+                    <p>だからこそ私たちは、<strong>「見て楽しく、安全で扱いやすい空のエンターテインメント」</strong>を目指しています 。「魚が空を飛ぶ」というファンタジーが、きっと人々を笑顔にすると信じています 。</p>
+                </div>
+                <div class="image-box">
+                    <div class="placeholder-text">Concept Image<br>(Flying Shark)</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="technology" class="bg-light">
+            <div class="container">
+                <h2 class="section-title">Engineering</h2>
+                <div class="grid">
+                    <div class="card">
+                        <h3>飛行船機体の採用 </h3>
+                        <p>ヘリウムガスの浮力で機体を支えることで、墜落リスクを大幅に軽減 。安全性が最優先されるアトラクションや演出の現場に適した方式です 。</p>
+                    </div>
+                    <div class="card">
+                        <h3>プロペラレス推進 </h3>
+                        <p>高速回転するプロペラを一切使用せず、魚の「ひれの動き」だけで推力を得ます 。人や物に接触しても極めて安全な構造を実現しました 。</p>
+                    </div>
+                </div>
+                <div class="image-box" style="margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    <div class="placeholder-text">Mechanism Diagram<br>(Fin Motion System)</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="episode" class="container">
+            <h2 class="section-title">Episode</h2>
+            <div class="episode-box">
+                <p class="quote">
+                    2025年度「全日本学生屋内飛行ロボットコンテスト」に出場 。
+                    本番では空調の風に流され、得点は0点でした 。<br><br>
+                    しかし、会場は風の中で一生懸命に泳ぐ「フカヒレ」の姿を見て、笑顔と声援であふれました 。
+                    その様子はSNSで拡散され、約35万回再生を記録。「かわいい」「おもしろい」といった多くの反応をいただきました 。
+                </p>
+                <p>この結果から、私たちは「航空工学で人々を笑顔にする」という目標の確かな手応えを得ました 。</p>
+            </div>
+        </section>
+
+        <section id="future" class="bg-dark">
+            <div class="container">
+                <h2 class="section-title" style="color: white; border-bottom-color: white;">Next Step</h2>
+                <p>現在の最大の課題は、空気の密度の薄さを克服し、風に負けない推力を生み出すことです 。</p>
+                <p>2026年度のロボコンでは、さらに進化した独自の推進機構で安定した飛行を披露することを目指します 。</p>
+                <p>航空工学が人々に夢とワクワクを届ける力であることを、私たちは証明し続けます 。</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 東京都立産業技術高等専門学校 フカヒレ開発チーム </p>
+    </footer>
+
 </body>
 </html>
