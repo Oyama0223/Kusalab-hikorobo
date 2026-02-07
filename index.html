@@ -35,6 +35,28 @@
             z-index: 1000;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        /* ロゴ周りのスタイル調整 */
+.logo a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+.logo-img {
+    height: 40px;    /* ヘッダーの高さに合わせて調整してください */
+    width: auto;     /* アスペクト比を維持 */
+    display: block;
+    transition: opacity 0.3s;
+}
+
+.logo-img:hover {
+    opacity: 0.8;    /* ホバー時に少し透明にする演出 */
+}
+
+/* ナビゲーションの高さ調整（ロゴが大きくなった場合のため） */
+nav {
+    min-height: 60px; 
+}
 
         nav {
             display: flex;
@@ -230,17 +252,21 @@
 </head>
 <body>
 
-    <header>
-        <nav>
-            <div class="logo">Project フカヒレ</div>
-            <ul>
-                <li><a href="#concept">Concept</a></li>
-                <li><a href="#technology">Technology</a></li>
-                <li><a href="#episode">Episode</a></li>
-                <li><a href="#future">Future</a></li>
-            </ul>
-        </nav>
-    </header>
+<header>
+    <nav>
+        <div class="logo">
+            <a href="#">
+                <img src="logo.png" alt="Project フカヒレ" class="logo-img">
+            </a>
+        </div>
+        <ul>
+            <li><a href="#concept">Concept</a></li>
+            <li><a href="#technology">Technology</a></li>
+            <li><a href="#episode">Episode</a></li>
+            <li><a href="#future">Future</a></li>
+        </ul>
+    </nav>
+</header>
 
     <section class="hero">
         <div class="hero-content">
