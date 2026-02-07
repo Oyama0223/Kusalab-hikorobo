@@ -26,37 +26,14 @@
             scroll-behavior: smooth;
         }
 
-        /* ナビゲーション */
+        /* --- ナビゲーション --- */
         header {
             background: var(--white);
-            padding: 1rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        /* ロゴ周りのスタイル調整 */
-.logo a {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-}
-
-.logo-img {
-    height: 40px;    /* ヘッダーの高さに合わせて調整してください */
-    width: auto;     /* アスペクト比を維持 */
-    display: block;
-    transition: opacity 0.3s;
-}
-
-.logo-img:hover {
-    opacity: 0.8;    /* ホバー時に少し透明にする演出 */
-}
-
-/* ナビゲーションの高さ調整（ロゴが大きくなった場合のため） */
-nav {
-    min-height: 60px; 
-}
 
         nav {
             display: flex;
@@ -64,14 +41,25 @@ nav {
             align-items: center;
             max-width: 1100px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0.8rem 20px;
+            min-height: 60px;
         }
 
-        .logo {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: var(--main-black);
-            letter-spacing: 0.05em;
+        .logo a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+
+        .logo-img {
+            height: 40px;    /* 画像の高さ */
+            width: auto;
+            display: block;
+            transition: opacity 0.3s;
+        }
+
+        .logo-img:hover {
+            opacity: 0.8;
         }
 
         nav ul {
@@ -90,19 +78,19 @@ nav {
             color: var(--dark-gray);
             font-weight: bold;
             transition: color 0.3s;
+            font-size: 0.95rem;
         }
 
         nav ul li a:hover {
             color: var(--main-black);
         }
 
-        /* ヒーローエリア */
+        /* --- ヒーローエリア --- */
         .hero {
-            /* モノトーンの画像またはグレースケールフィルタを想定 */
             background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1464800910203-3564e445b1cb?auto=format&fit=crop&q=80&w=2000');
             background-size: cover;
             background-position: center;
-            filter: grayscale(20%); /* わずかに彩度を落とす */
+            filter: grayscale(10%); 
             height: 70vh;
             display: flex;
             align-items: center;
@@ -112,17 +100,18 @@ nav {
         }
 
         .hero h1 {
-            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-size: clamp(1.8rem, 5vw, 3.5rem);
             margin-bottom: 0.5rem;
             letter-spacing: 0.1em;
+            padding: 0 15px;
         }
 
         .hero p {
-            font-size: 1.2rem;
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
             opacity: 0.9;
         }
 
-        /* コンテンツセクション */
+        /* --- コンテンツ共通 --- */
         .container {
             max-width: 1000px;
             margin: 0 auto;
@@ -146,9 +135,10 @@ nav {
             margin: 15px auto;
         }
 
+        /* --- Conceptセクション --- */
         .content-flex {
             display: flex;
-            gap: 50px;
+            gap: 40px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -159,20 +149,18 @@ nav {
             flex: 0.8;
             min-width: 300px;
             background: var(--light-gray);
-            border-radius: 4px; /* シャープな印象にするため少し角丸を抑える */
+            border-radius: 4px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
-        .placeholder-text {
-            padding: 80px 20px;
-            text-align: center;
-            color: var(--medium-gray);
-            border: 1px solid var(--border-gray);
-            margin: 15px;
+        .image-box img {
+            display: block;
+            width: 100%;
+            height: auto;
         }
 
-        /* 技術カード */
+        /* --- Technologyセクション --- */
         .bg-light { background-color: var(--light-gray); }
 
         .grid {
@@ -201,9 +189,10 @@ nav {
             border-bottom: 1px solid var(--main-black);
             padding-bottom: 10px;
             display: inline-block;
+            font-size: 1.2rem;
         }
 
-        /* エピソードセクション */
+        /* --- Episodeセクション --- */
         .episode-box {
             background: var(--white);
             padding: 3rem;
@@ -216,25 +205,19 @@ nav {
             font-size: 1.1rem;
             color: var(--text-color);
             line-height: 2;
-            margin-bottom: 1.5rem;
         }
 
-        /* ダークセクション（Future） */
+        /* --- Futureセクション --- */
         .bg-dark {
             background-color: var(--main-black);
             color: var(--white);
             text-align: center;
         }
 
-        .bg-dark .section-title {
-            color: var(--white);
-        }
-        
-        .bg-dark .section-title::after {
-            background: var(--white);
-        }
+        .bg-dark .section-title { color: var(--white); }
+        .bg-dark .section-title::after { background: var(--white); }
 
-        /* フッター */
+        /* --- フッター --- */
         footer {
             background: #111111;
             color: rgba(255,255,255,0.5);
@@ -244,29 +227,75 @@ nav {
             letter-spacing: 0.05em;
         }
 
+        /* --- モバイル対応 (レスポンシブ) --- */
         @media (max-width: 768px) {
-            .hero { height: 50vh; }
-            .section-title { font-size: 1.8rem; }
+            nav {
+                flex-direction: column;
+                padding: 15px 20px;
+            }
+
+            .logo {
+                margin-bottom: 15px;
+            }
+
+            nav ul li {
+                margin: 0 10px;
+            }
+
+            nav ul li a {
+                font-size: 0.85rem;
+            }
+
+            .hero {
+                height: 50vh;
+            }
+
+            .container {
+                padding: 3.5rem 20px;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .episode-box {
+                padding: 2rem 1.5rem;
+            }
+
+            .quote {
+                font-size: 1rem;
+                line-height: 1.8;
+            }
+        }
+
+        @media (max-width: 480px) {
+            nav ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            nav ul li {
+                margin: 5px 8px;
+            }
         }
     </style>
 </head>
 <body>
 
-<header>
-    <nav>
-        <div class="logo">
-            <a href="#">
-                <img src="logo.png" alt="Project フカヒレ" class="logo-img">
-            </a>
-        </div>
-        <ul>
-            <li><a href="#concept">Concept</a></li>
-            <li><a href="#technology">Technology</a></li>
-            <li><a href="#episode">Episode</a></li>
-            <li><a href="#future">Future</a></li>
-        </ul>
-    </nav>
-</header>
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="#">
+                    <img src="logo.png" alt="Project フカヒレ" class="logo-img">
+                </a>
+            </div>
+            <ul>
+                <li><a href="#concept">Concept</a></li>
+                <li><a href="#technology">Technology</a></li>
+                <li><a href="#episode">Episode</a></li>
+                <li><a href="#future">Future</a></li>
+            </ul>
+        </nav>
+    </header>
 
     <section class="hero">
         <div class="hero-content">
@@ -284,7 +313,7 @@ nav {
                     <p>だからこそ私たちは、<strong>「見て楽しく、安全で扱いやすい空のエンターテインメント」</strong>を目指しています。「魚が空を飛ぶ」というファンタジーが、きっと人々を笑顔にすると信じています。</p>
                 </div>
                 <div class="image-box">
-                    <img src="fig3.png" width="100%" height="auto" alt="fig1">
+                    <img src="fig3.png" alt="飛行するフカヒレのイメージ">
                 </div>
             </div>
         </section>
@@ -303,7 +332,7 @@ nav {
                     </div>
                 </div>
                 <div class="image-box" style="margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    <img src="fig2.png" width="100%" height="auto" alt="fig2">
+                    <img src="fig2.png" alt="機体構造の図解">
                 </div>
             </div>
         </section>
@@ -315,7 +344,8 @@ nav {
                     2025年度「全日本学生屋内飛行ロボットコンテスト」に出場。<br>
                     本番では空調の風に流され、得点は0点でした。<br><br>
                     しかし、会場では風の中で一生懸命に泳ぐ「フカヒレ」の姿に対し、多くの方から声援と笑い声をいただくことができました。<br><br>
-                    この結果から、私たちは「航空工学で人々を笑顔にする」という目標の確かな手応えを得ました。</p>
+                    この結果から、私たちは「航空工学で人々を笑顔にする」という目標の確かな手応えを得ました。
+                </p>
             </div>
         </section>
 
