@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ESP32C3 Servo Controller</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f9; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: inline-block; }
+        .control-group { margin: 15px 0; text-align: left; }
+        label { display: inline-block; width: 150px; font-weight: bold; }
+        input[type="range"] { width: 200px; vertical-align: middle; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:disabled { background: #ccc; }
+        .val { display: inline-block; width: 40px; text-align: right; }
+        #status { margin-top: 10px; font-size: 0.9em; color: #666; }
+    </style>
+</head>
+<body>
+    <h2>ESP32C3 サーボ遠隔操作</h2>
+    <div class="card">
+        <button id="connect">ESP32に接続する</button>
+        <div id="status">未接続 (HTTPSまたはlocalhostが必要です)</div>
+        <hr>
+        <div class="control-group">
+            <label>動作スイッチ:</label>
+            <input type="checkbox" id="run_sw" checked> ON
+        </div>
+        <div class="control-group">
+            <label>中心角度:</label>
+            <input type="range" id="center" min="0" max="180" value="90">
+            <span class="val" id="center_v">90</span>°
+        </div>
+        <div class="control-group">
+            <label>振幅 (±角度):</label>
+            <input type="range" id="amp" min="0" max="90" value="30">
+            <span class="val" id="amp_v">30</span>°
+        </div>
+        <div class="control-group">
+            <label>周期 (ms):</label>
+            <input type="range" id="dur" min="200" max="5000" step="100" value="1000">
+            <span class="val" id="dur_v">1000</span>
+        </div>
+        <button id="send" disabled>設定を反映</button>
+    </div>
+
+    <script>
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHAR_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+        let chara = null;
+
+        ['center', 'amp', 'dur'].forEach(id => {
+            document.getElementById(id).addEventListener('input', (e) => {
+                document.getElementById(id + '_v').innerText = e.target.value;
+            });
+        });
+
+        document.getElementById('connect').addEventListener('click', async () => {
+            const statusDiv = document.getElementById('status');
+            try {
+                statusDiv.innerText = "デバイスを探しています...";
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'ESP32C3_Servo_Ctrl' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+                
+                statusDiv.innerText = "接続中...";
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                chara = await service.getCharacteristic(CHAR_UUID);
+                
+                statusDiv.innerText = "接続済み！ ✅";
+                statusDiv.style.color = "green";
+                document.getElementById('send').disabled = false;
+            } catch (err) {
+                console.error(err);
+                statusDiv.innerText = "エラー: " + err.message;
+                statusDiv.style.color = "red";
+                alert("接続に失敗しました。F12でログを確認してください。");
+            }
+        });
+
+        document.getElementById('send').addEventListener('click', async () => {
+            if (!chara) return;
+            try {
+                const on = document.getElementById('run_sw').checked ? 1 : 0;
+                const neu = document.getElementById('center').value;
+                const amp = document.getElementById('amp').value;
+                const dur = document.getElementById('dur').value;
+                
+                const payload = `${on},${neu},${amp},${dur}`;
+                const encoder = new TextEncoder();
+                await chara.writeValue(encoder.encode(payload));
+                console.log("Sent: " + payload);
+            } catch (err) {
+                console.error("送信エラー:", err);
+                alert("送信に失敗しました");
+            }
+        });
+    </script>
+</body>
+</html>
