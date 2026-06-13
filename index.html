@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>サメ型ドローン「フカヒレ」プロジェクト</title>
+    <title>サメ型ドローン「フカヒレ」プロジェクト | Top</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* --- CSS --- */
+        /* --- 共通 CSS --- */
         :root {
-            --main-black: #222222;    /* メインカラー：深い黒 */
-            --dark-gray: #444444;     /* サブカラー：濃いグレー */
-            --medium-gray: #888888;   /* 中間色 */
-            --light-gray: #f4f4f4;    /* 背景用：薄いグレー */
-            --border-gray: #dddddd;   /* 境界線用 */
-            --text-color: #333333;    /* テキストカラー */
+            --main-black: #222222;
+            --dark-gray: #444444;
+            --medium-gray: #888888;
+            --light-gray: #f4f4f4;
+            --border-gray: #dddddd;
+            --text-color: #333333;
             --white: #ffffff;
         }
-
         body {
             font-family: 'Noto Sans JP', sans-serif;
             line-height: 1.8;
@@ -25,228 +24,72 @@
             padding: 0;
             scroll-behavior: smooth;
         }
-
-        /* ナビゲーション */
         header {
             background: var(--white);
-            padding: 1rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        /* ロゴ周りのスタイル調整 */
-.logo a {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-}
-
-.logo-img {
-    height: 40px;    /* ヘッダーの高さに合わせて調整してください */
-    width: auto;     /* アスペクト比を維持 */
-    display: block;
-    transition: opacity 0.3s;
-}
-
-.logo-img:hover {
-    opacity: 0.8;    /* ホバー時に少し透明にする演出 */
-}
-
-/* ナビゲーションの高さ調整（ロゴが大きくなった場合のため） */
-nav {
-    min-height: 60px; 
-}
-
+        .logo a { display: flex; align-items: center; text-decoration: none; }
+        .logo-img { height: 40px; width: auto; display: block; transition: opacity 0.3s; }
+        .logo-img:hover { opacity: 0.8; }
         nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
             max-width: 1100px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 10px 20px;
+            min-height: 60px;
         }
+        .logo { font-weight: bold; font-size: 1.2rem; color: var(--main-black); letter-spacing: 0.05em; }
+        nav ul { list-style: none; display: flex; margin: 0; padding: 0; }
+        nav ul li { margin-left: 20px; }
+        nav ul li a { text-decoration: none; color: var(--dark-gray); font-weight: bold; transition: color 0.3s; }
+        nav ul li a:hover, nav ul li a.active { color: var(--main-black); border-bottom: 2px solid var(--main-black); padding-bottom: 5px;}
 
-        .logo {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: var(--main-black);
-            letter-spacing: 0.05em;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            margin: 0;
-            padding: 0;
-        }
-
-        nav ul li {
-            margin-left: 20px;
-        }
-
-        nav ul li a {
-            text-decoration: none;
-            color: var(--dark-gray);
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-
-        nav ul li a:hover {
-            color: var(--main-black);
-        }
+        /* コンポーネント */
+        .container { max-width: 1000px; margin: 0 auto; padding: 5rem 20px; }
+        .section-title { text-align: center; font-size: 2.2rem; color: var(--main-black); margin-bottom: 3rem; position: relative; }
+        .section-title::after { content: ''; display: block; width: 40px; height: 3px; background: var(--main-black); margin: 15px auto; }
+        .content-flex { display: flex; gap: 50px; align-items: center; flex-wrap: wrap; }
+        .text { flex: 1.2; min-width: 300px; }
+        .image-box { flex: 0.8; min-width: 300px; background: var(--light-gray); border-radius: 4px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .bg-light { background-color: var(--light-gray); }
+        .bg-dark { background-color: var(--main-black); color: var(--white); text-align: center; }
+        .bg-dark .section-title { color: var(--white); }
+        .bg-dark .section-title::after { background: var(--white); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .card { background: var(--white); padding: 2.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: transform 0.3s; border: 1px solid var(--border-gray); }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+        .card h3 { color: var(--main-black); margin-top: 0; border-bottom: 1px solid var(--main-black); padding-bottom: 10px; display: inline-block; }
+        footer { background: #111111; color: rgba(255,255,255,0.5); text-align: center; padding: 2.5rem; font-size: 0.8rem; letter-spacing: 0.05em; }
 
         /* ヒーローエリア */
         .hero {
-            /* モノトーンの画像またはグレースケールフィルタを想定 */
             background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1464800910203-3564e445b1cb?auto=format&fit=crop&q=80&w=2000');
-            background-size: cover;
-            background-position: center;
-            filter: grayscale(20%); /* わずかに彩度を落とす */
-            height: 70vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--white);
-            text-align: center;
+            background-size: cover; background-position: center; filter: grayscale(20%);
+            height: 70vh; display: flex; align-items: center; justify-content: center; color: var(--white); text-align: center;
         }
+        .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 0.5rem; letter-spacing: 0.1em; }
+        .hero p { font-size: 1.2rem; opacity: 0.9; }
 
-        .hero h1 {
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            margin-bottom: 0.5rem;
-            letter-spacing: 0.1em;
-        }
+        /* サブページ用ミニヒーロー */
+        .sub-hero { background: var(--main-black); padding: 4rem 20px; text-align: center; color: var(--white); }
+        .sub-hero h1 { margin: 0; font-size: 2.5rem; letter-spacing: 0.05em; }
 
-        .hero p {
-            font-size: 1.2rem;
-            opacity: 0.9;
-        }
-
-        /* コンテンツセクション */
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 5rem 20px;
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.2rem;
-            color: var(--main-black);
-            margin-bottom: 3rem;
-            position: relative;
-        }
-
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 40px;
-            height: 3px;
-            background: var(--main-black);
-            margin: 15px auto;
-        }
-
-        .content-flex {
-            display: flex;
-            gap: 50px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .text { flex: 1.2; min-width: 300px; }
-
-        .image-box {
-            flex: 0.8;
-            min-width: 300px;
-            background: var(--light-gray);
-            border-radius: 4px; /* シャープな印象にするため少し角丸を抑える */
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        .placeholder-text {
-            padding: 80px 20px;
-            text-align: center;
-            color: var(--medium-gray);
-            border: 1px solid var(--border-gray);
-            margin: 15px;
-        }
-
-        /* 技術カード */
-        .bg-light { background-color: var(--light-gray); }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-        }
-
-        .card {
-            background: var(--white);
-            padding: 2.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid var(--border-gray);
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-        }
-
-        .card h3 {
-            color: var(--main-black);
-            margin-top: 0;
-            border-bottom: 1px solid var(--main-black);
-            padding-bottom: 10px;
-            display: inline-block;
-        }
-
-        /* エピソードセクション */
-        .episode-box {
-            background: var(--white);
-            padding: 3rem;
-            border-radius: 8px;
-            border-left: 6px solid var(--main-black);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        }
-
-        .quote {
-            font-size: 1.1rem;
-            color: var(--text-color);
-            line-height: 2;
-            margin-bottom: 1.5rem;
-        }
-
-        /* ダークセクション（Future） */
-        .bg-dark {
-            background-color: var(--main-black);
-            color: var(--white);
-            text-align: center;
-        }
-
-        .bg-dark .section-title {
-            color: var(--white);
-        }
-        
-        .bg-dark .section-title::after {
-            background: var(--white);
-        }
-
-        /* フッター */
-        footer {
-            background: #111111;
-            color: rgba(255,255,255,0.5);
-            text-align: center;
-            padding: 2.5rem;
-            font-size: 0.8rem;
-            letter-spacing: 0.05em;
-        }
-
+        /* ▼ スマホ対応（レスポンシブ） ▼ */
         @media (max-width: 768px) {
+            nav { flex-direction: column; padding: 15px 0; gap: 15px; }
+            nav ul { justify-content: center; flex-wrap: wrap; gap: 10px; }
+            nav ul li { margin: 0 10px; }
             .hero { height: 50vh; }
+            .container { padding: 3rem 20px; }
             .section-title { font-size: 1.8rem; }
+            .content-flex { gap: 30px; }
+            /* スマホでは横並びを縦並びに強制 */
+            .text, .image-box { flex: 100%; min-width: 100%; }
         }
     </style>
 </head>
@@ -255,89 +98,62 @@ nav {
 <header>
     <nav>
         <div class="logo">
-            <a href="#">
+            <a href="index.html">
                 <img src="logo.png" alt="Project フカヒレ" class="logo-img">
             </a>
         </div>
         <ul>
-            <li><a href="#concept">Concept</a></li>
-            <li><a href="#technology">Technology</a></li>
-            <li><a href="#episode">Episode</a></li>
-            <li><a href="#future">Future</a></li>
+            <li><a href="index.html" class="active">Top</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="news.html">News</a></li>
         </ul>
     </nav>
 </header>
 
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Aerospace for Joy.</h1>
-            <p>サメ型ドローン「フカヒレ」開発プロジェクト</p>
+<section class="hero">
+    <div class="hero-content">
+        <h1>Aerospace for Joy.</h1>
+        <p>サメ型ドローン「フカヒレ」開発プロジェクト</p>
+    </div>
+</section>
+
+<main>
+    <section id="concept" class="container">
+        <h2 class="section-title">Concept</h2>
+        <div class="content-flex">
+            <div class="text">
+                <p>人類は古くから空を見上げ、自由に飛ぶことを夢見てきました。しかし現在、ドローンが実戦兵器として使われるなど、航空技術は本来の「憧れ」から遠ざかりつつあります。</p>
+                <p>だからこそ私たちは、<strong>「見て楽しく、安全で扱いやすい空のエンターテインメント」</strong>に利活用可能なドローンの開発を目指しています。</p>
+            </div>
+            <div class="image-box">
+                <img src="fig3.png" width="100%" height="auto" alt="fig1">
+            </div>
         </div>
     </section>
 
-    <main>
-        <section id="concept" class="container">
-            <h2 class="section-title">Concept</h2>
-            <div class="content-flex">
-                <div class="text">
-                    <p>人類は古くから空を見上げ、自由に飛ぶことを夢見てきました。しかし現在、ドローンが実戦兵器として使われるなど、航空技術は本来の「憧れ」から遠ざかりつつあります。</p>
-                    <p>だからこそ私たちは、<strong>「見て楽しく、安全で扱いやすい空のエンターテインメント」</strong>に利活用可能なドローンの開発を目指しています。</p>
+    <section id="technology" class="bg-light">
+        <div class="container">
+            <h2 class="section-title">Engineering</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>飛行船機体の採用</h3>
+                    <p>ヘリウムガスの浮力で機体を支えることで、墜落リスクを大幅に軽減。安全性が最優先されるアトラクションや演出の現場に適した方式です。</p>
                 </div>
-                <div class="image-box">
-                    <img src="fig3.png" width="100%" height="auto" alt="fig1">
-                </div>
-            </div>
-        </section>
-
-        <section id="technology" class="bg-light">
-            <div class="container">
-                <h2 class="section-title">Engineering</h2>
-                <div class="grid">
-                    <div class="card">
-                        <h3>飛行船機体の採用</h3>
-                        <p>ヘリウムガスの浮力で機体を支えることで、墜落リスクを大幅に軽減。安全性が最優先されるアトラクションや演出の現場に適した方式です。</p>
-                    </div>
-                    <div class="card">
-                        <h3>プロペラレス推進</h3>
-                        <p>高速回転するプロペラを一切使用せず、魚の「ひれの動き」だけで推力を得ます。人や物に接触しても極めて安全な構造を実現しました。</p>
-                    </div>
-                </div>
-                <div class="image-box" style="margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto;">
-                    <img src="fig2.png" width="100%" height="auto" alt="fig2">
+                <div class="card">
+                    <h3>プロペラレス推進</h3>
+                    <p>高速回転するプロペラを一切使用せず、魚の「ひれの動き」だけで推力を得ます。人や物に接触しても極めて安全な構造を実現しました。</p>
                 </div>
             </div>
-        </section>
-
-<section id="episode" class="container">
-            <h2 class="section-title">Episode</h2>
-            <div class="episode-box">
-                <p class="quote">
-                    2025年度「全日本学生屋内飛行ロボットコンテスト」に出場。<br>
-                    本番では空調の風に流され、残念ながら安定した飛行はできませんでした。<br>
-                    しかし、機体コンセプトは多くの方から好評いただき、航空工学のエンタメ活用に向けての、一つの可能性を見出すことができました。<br>
-                </p>
-                
-                <div style="display: flex; justify-content: center; margin-top: 2rem;">
-                    <blockquote class="twitter-tweet" data-align="center" data-theme="light">
-                        <a href="https://twitter.com/nedu_san_0223/status/1971893372953690162"></a>
-                    </blockquote>
-                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-                </div>
-        </section>
-
-        <section id="future" class="bg-dark">
-            <div class="container">
-                <h2 class="section-title">Next Step</h2>
-                <p>現在の最大の課題は、空気の密度の薄さを克服し、風に負けない推力を生み出すことです。</p>
-                <p>2026年度のロボコンでは、さらに進化した独自の推進機構で安定した飛行を披露することを目指します。</p>
+            <div class="image-box" style="margin-top: 3rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <img src="fig2.png" width="100%" height="auto" alt="fig2">
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
+</main>
 
-    <footer>
-        <p>&copy; 2026 東京都立産業技術高等専門学校 フカヒレ開発チーム</p>
-    </footer>
+<footer>
+    <p>&copy; 2026 東京都立産業技術高等専門学校 草谷研究室</p>
+</footer>
 
 </body>
 </html>
