@@ -67,7 +67,9 @@
             margin: 0 auto;
         }
         .news-link-card {
-            display: block;
+            display: flex;
+            align-items: baseline; /* テキストのベースラインで揃える */
+            gap: 1.5rem;
             background: var(--white);
             padding: 1.5rem 2rem;
             border-radius: 8px;
@@ -81,10 +83,16 @@
             transform: translateX(8px);
             box-shadow: 0 6px 15px rgba(0,0,0,0.1);
         }
+        .news-date {
+            color: var(--medium-gray);
+            font-size: 0.95rem;
+            white-space: nowrap; /* 日付が改行されないようにする */
+        }
         .news-link-card h3 {
             margin: 0;
             color: var(--main-black);
             font-size: 1.2rem;
+            line-height: 1.5;
         }
 
         /* ▼ スマホ対応（レスポンシブ） ▼ */
@@ -93,7 +101,13 @@
             nav ul { justify-content: center; flex-wrap: wrap; gap: 10px; }
             nav ul li { margin: 0 10px; }
             .container { padding: 3rem 20px; }
-            .news-link-card { padding: 1.2rem 1.5rem; }
+            .news-link-card { 
+                flex-direction: column; /* スマホでは縦並びに */
+                align-items: flex-start;
+                gap: 0.5rem;
+                padding: 1.2rem 1.5rem; 
+            }
+            .news-date { font-size: 0.85rem; }
             .news-link-card h3 { font-size: 1.1rem; }
         }
     </style>
@@ -125,14 +139,17 @@
         
         <div class="news-list">
             <a href="news3.html" class="news-link-card">
+                <span class="news-date">2026.06.13</span>
                 <h3>2026年度飛行ロボットコンテストにエントリーしました</h3>
             </a>
             
             <a href="news2.html" class="news-link-card">
-                <h3>2025年度 飛行ロボットコンテスト出場＆特別賞受賞</h3>
+                <span class="news-date">2025.09.28</span>
+                <h3>2025年度 飛行ロボットコンテスト出場</h3>
             </a>
 
             <a href="news1.html" class="news-link-card">
+                <span class="news-date">2025.07.28</span>
                 <h3>プロジェクトサイトを公開しました</h3>
             </a>
         </div>
