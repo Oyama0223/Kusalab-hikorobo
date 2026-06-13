@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Detail | サメ型ドローン「フカヒレ」プロジェクト</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 共通 CSS --- */
+        :root {
+            --main-black: #222222;
+            --dark-gray: #444444;
+            --medium-gray: #888888;
+            --light-gray: #f4f4f4;
+            --border-gray: #dddddd;
+            --text-color: #333333;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+        header {
+            background: var(--white);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .logo a { display: flex; align-items: center; text-decoration: none; }
+        .logo-img { height: 40px; width: auto; display: block; transition: opacity 0.3s; }
+        .logo-img:hover { opacity: 0.8; }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 10px 20px;
+            min-height: 60px;
+        }
+        .logo { font-weight: bold; font-size: 1.2rem; color: var(--main-black); letter-spacing: 0.05em; }
+        nav ul { list-style: none; display: flex; margin: 0; padding: 0; }
+        nav ul li { margin-left: 20px; }
+        nav ul li a { text-decoration: none; color: var(--dark-gray); font-weight: bold; transition: color 0.3s; }
+        nav ul li a:hover, nav ul li a.active { color: var(--main-black); border-bottom: 2px solid var(--main-black); padding-bottom: 5px;}
+
+        /* コンポーネント */
+        .container { max-width: 800px; margin: 0 auto; padding: 5rem 20px; }
+        
+        /* サブページ用ミニヒーロー */
+        .sub-hero { background: var(--main-black); padding: 4rem 20px; text-align: center; color: var(--white); }
+        .sub-hero h1 { margin: 0; font-size: 2.5rem; letter-spacing: 0.05em; }
+
+        /* ▼ News詳細専用のスタイル ▼ */
+        .episode-box {
+            background: var(--white);
+            padding: 4rem 3rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-gray);
+        }
+        .news-title {
+            margin-top: 0;
+            color: var(--main-black);
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--main-black);
+            padding-bottom: 15px;
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+        
+        /* 記事本文のスタイル */
+        .news-content {
+            font-size: 1.05rem;
+            line-height: 2;
+            color: var(--text-color);
+        }
+        .news-content p {
+            margin-bottom: 1.5rem;
+        }
+        .news-content h3 {
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--main-black);
+            border-left: 4px solid var(--main-black);
+            padding-left: 10px;
+            font-size: 1.3rem;
+        }
+        .news-content ul {
+            background: var(--light-gray);
+            padding: 1.5rem 1.5rem 1.5rem 3rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+        }
+        .news-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        /* 画像プレースホルダー */
+        .dummy-image {
+            background: var(--light-gray);
+            border: 1px solid var(--border-gray);
+            color: var(--medium-gray);
+            text-align: center;
+            padding: 60px 20px;
+            margin: 2rem 0;
+            border-radius: 4px;
+        }
+
+        /* 戻るボタン */
+        .back-btn {
+            display: inline-block;
+            margin-top: 3rem;
+            padding: 12px 30px;
+            background-color: var(--main-black);
+            color: var(--white);
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            transition: opacity 0.3s;
+        }
+        .back-btn:hover {
+            opacity: 0.8;
+        }
+
+        /* ▼ スマホ対応（レスポンシブ） ▼ */
+        @media (max-width: 768px) {
+            nav { flex-direction: column; padding: 15px 0; gap: 15px; }
+            nav ul { justify-content: center; flex-wrap: wrap; gap: 10px; }
+            nav ul li { margin: 0 10px; }
+            .container { padding: 3rem 20px; }
+            .episode-box { padding: 2rem 1.5rem; }
+            .news-title { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <div class="logo">
+            <a href="index.html">
+                <img src="logo.png" alt="Project フカヒレ" class="logo-img">
+            </a>
+        </div>
+        <ul>
+            <li><a href="index.html">Top</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="news.html" class="active">News</a></li>
+        </ul>
+    </nav>
+</header>
+
+<section class="sub-hero">
+    <h1>News</h1>
+</section>
+
+<main>
+    <section class="container">
+        
+        <article class="episode-box">
+            <h2 class="news-title">2026年度飛行ロボットコンテストにエントリーしました</h2>
+            
+            <div class="news-content">
+                <p>2026年度「全日本学生屋内飛行ロボットコンテスト」に、チーム名<strong>「Flying！フカヒレ」</strong>として正式にエントリーいたしました。<br>
+                昨年の悔しさをバネに、今年はさらなる進化を遂げた機体で挑みます。</p>
+
+                <h3>現在の開発状況について</h3>
+                <p>現在、チームでは昨年度の課題であった「空調の風に対する耐性」を克服するため、以下の改良を進めています。</p>
+                
+                <ul>
+                    <li><strong>推進機構のアップデート：</strong> 水平リンク機構による羽ばたき翼から構造を見直し、より力強い推力を生み出す新機構を採用。</li>
+                    <li><strong>機体の姿勢制御手段の開発：</strong> 姿勢制御用の羽ばたき翼（胸びれ）を開発中。</li>
+                    <li><strong>エンベロープ（バルーン）の形状最適化：</strong> 羽ばたき翼と相性の良いエンベロープ形状について、調査・試作。</li>
+                </ul>
+
+
+                <h3>今後のスケジュール</h3>
+                <p>今後は学内の体育館などを利用し、本格的な飛行テストを重ねていく予定です。本番の大会で皆様に「空飛ぶサメ」の優雅な泳ぎと安定した飛行をお見せできるよう、チーム一丸となって開発・試験・練習に励みます。</p>
+                <p>引き続き、プロジェクト「フカヒレ」へのご声援をよろしくお願いいたします！</p>
+            </div>
+        </article>
+
+        <div style="text-align: center;">
+            <a href="news.html" class="back-btn">← News一覧へ戻る</a>
+        </div>
+
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 東京都立産業技術高等専門学校 草谷研究室</p>
+</footer>
+
+</body>
+</html>
