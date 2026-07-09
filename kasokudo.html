@@ -55,10 +55,10 @@
             try {
                 if (!bleDevice) {
                     console.log('Bluetoothデバイスをリクエスト中...');
-                    bleDevice = await navigator.bluetooth.requestDevice({
-                        filters: [{ name: 'XIAO_ESP32C3_Accel' }],
-                        optionalServices: [SERVICE_UUID]
-                    });
+// 名前フィルタを使わず、サービスUUIDで検索する確実な方法
+bleDevice = await navigator.bluetooth.requestDevice({
+    filters: [{ services: [SERVICE_UUID] }] 
+});
                     
                     bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
                 }
@@ -94,7 +94,7 @@
             }
             isRecording = false;
             startBtn.disabled = false;
-            stopBtn.disabled = true;
+            stopBtn.disabledf = true;
             console.log('計測終了');
         });
 
