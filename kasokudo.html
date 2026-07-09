@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>加速度センサーモニター</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin-right: 10px; cursor: pointer;}
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
+        th { background-color: #f2f2f2; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h1>XIAO ESP32C3 加速度モニター</h1>
+    <button id="startBtn">計測開始 (BLE接続)</button>
+    <button id="stopBtn" disabled>計測終了</button>
+
+    <table id="dataTable">
+        <thead>
+            <tr>
+                <th>経過時間 (s)</th>
+                <th>Acc X (G)</th>
+                <th>Acc Y (G)</th>
+                <th>Acc Z (G)</th>
+                <th>Vel X (m/s)</th>
+                <th>Vel Y (m/s)</th>
+                <th>Vel Z (m/s)</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <script>
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+
+        let bleDevice;
+        let bleCharacteristic;
+        let isRecording = false;
+
+        let startTime = 0;
+        let lastTime = 0;
+        
+        // 速度 (m/s)
+        let velX = 0, velY = 0, velZ = 0;
+
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const tbody = document.querySelector('#dataTable tbody');
+
+        startBtn.addEventListener('click', async () => {
+            try {
+                if (!bleDevice) {
+                    console.log('Bluetoothデバイスをリクエスト中...');
+                    bleDevice = await navigator.bluetooth.requestDevice({
+                        filters: [{ name: 'XIAO_ESP32C3_Accel' }],
+                        optionalServices: [SERVICE_UUID]
+                    });
+                    
+                    bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+                }
+
+                console.log('GATTサーバーに接続中...');
+                const server = await bleDevice.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                await bleCharacteristic.startNotifications();
+                bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+
+                // 変数リセット
+                startTime = performance.now();
+                lastTime = startTime;
+                velX = 0; velY = 0; velZ = 0;
+                tbody.innerHTML = ''; 
+                isRecording = true;
+
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                console.log('計測開始');
+            } catch (error) {
+                console.error('エラー:', error);
+                alert('Bluetooth接続に失敗しました: ' + error);
+            }
+        });
+
+        stopBtn.addEventListener('click', async () => {
+            if (bleCharacteristic) {
+                await bleCharacteristic.stopNotifications();
+                bleCharacteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
+            }
+            isRecording = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            console.log('計測終了');
+        });
+
+        function onDisconnected() {
+            console.log('デバイスから切断されました');
+            isRecording = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+
+        function handleNotifications(event) {
+            if (!isRecording) return;
+
+            const value = event.target.value;
+            const decoder = new TextDecoder('utf-8');
+            const dataString = decoder.decode(value);
+            const [ax, ay, az] = dataString.split(',').map(Number);
+
+            const currentTime = performance.now();
+            const elapsedTime = (currentTime - startTime) / 1000; // 経過時間(秒)
+            const dt = (currentTime - lastTime) / 1000; // デルタ時間(秒)
+            lastTime = currentTime;
+
+            // 加速度(G)から速度(m/s)の算出 (積分: v = v0 + a * dt)
+            // 1G = 9.80665 m/s^2 とする。
+            // ※注意: 現実世界ではZ軸に常に重力(約1G)がかかっているため、
+            // 厳密な速度を出すには重力成分を除去(ハイパスフィルタ等)する必要があります。
+            velX += (ax * 9.80665) * dt;
+            velY += (ay * 9.80665) * dt;
+            velZ += (az * 9.80665) * dt;
+
+            // 表へ行を追加
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${elapsedTime.toFixed(2)}</td>
+                <td>${ax.toFixed(3)}</td>
+                <td>${ay.toFixed(3)}</td>
+                <td>${az.toFixed(3)}</td>
+                <td>${velX.toFixed(3)}</td>
+                <td>${velY.toFixed(3)}</td>
+                <td>${velZ.toFixed(3)}</td>
+            `;
+            // tbodyの先頭に追加して新しいデータが上に来るようにする
+            tbody.insertBefore(tr, tbody.firstChild);
+        }
+    </script>
+</body>
+</html>
