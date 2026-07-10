@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>フライトモニター</title>
+    <title>最小構成フライトモニター</title>
     <style>
         body { font-family: sans-serif; font-size: 14px; margin: 10px; }
         /* 計器の共通枠 (150x150) */
@@ -11,15 +11,17 @@
         /* 姿勢指示器 (色を復元して円形に) */
         #attitude-meter { border-radius: 50%; background-color: #222; }
         #roll-container { width: 100%; height: 100%; position: absolute; transform-origin: center; }
-        /* 空(青)と地面(茶)のグラデーション */
         #pitch-container { width: 400px; height: 400px; position: absolute; top: -125px; left: -125px; background: linear-gradient(to bottom, #1E90FF 50%, #8B4513 50%); }
-        /* 自機マークを黄色にして見やすく */
         .crosshair { position: absolute; top: 50%; left: 50%; width: 40px; height: 3px; background: yellow; transform: translate(-50%, -50%); z-index: 10; border: 1px solid #000; }
         
-        /* Gメーター (十字線と緑の点) */
+        /* 十字線 (Gメーター・マップ共通) */
         .axis-v { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: #ccc; }
         .axis-h { position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: #ccc; }
-        #g-dot { width: 10px; height: 10px; background: green; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; }
+        
+        /* ドット (Gメーター:緑, ポジション:青) */
+        .dot { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 50%; }
+        #g-dot { width: 10px; height: 10px; background: green; }
+        #pos-dot { width: 8px; height: 8px; background: blue; }
 
         button { margin: 0 5px 10px 0; padding: 5px 10px; cursor: pointer; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -38,14 +40,19 @@
     <button id="csvBtn" disabled>CSV保存</button>
     <br>
 
-    <div class="meter-box" id="attitude-meter">
+    <div class="meter-box" id="attitude-meter" title="姿勢 (Roll/Pitch)">
         <div id="roll-container"><div id="pitch-container"></div></div>
         <div class="crosshair"></div>
     </div>
     
-    <div class="meter-box">
+    <div class="meter-box" title="XY加速度 (G)">
         <div class="axis-v"></div><div class="axis-h"></div>
-        <div id="g-dot"></div>
+        <div id="g-dot" class="dot"></div>
+    </div>
+
+    <div class="meter-box" title="XY座標移動 (m)">
+        <div class="axis-v"></div><div class="axis-h"></div>
+        <div id="pos-dot" class="dot"></div>
     </div>
 
     <div class="table-wrap">
@@ -62,7 +69,9 @@
     <script>
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-        const MAX_G = 2.0; 
+        
+        const MAX_G = 2.0;   // Gメーター: 枠の端までの最大G
+        const MAX_POS = 10;  // ポジションマップ: 枠の端までの最大距離(メートル)
 
         let bleDevice, bleCharacteristic;
         let isRecording = false;
@@ -72,7 +81,8 @@
 
         const startBtn = document.getElementById('startBtn'), stopBtn = document.getElementById('stopBtn'), csvBtn = document.getElementById('csvBtn');
         const tbody = document.querySelector('#dataTable tbody');
-        const rollContainer = document.getElementById('roll-container'), pitchContainer = document.getElementById('pitch-container'), gDot = document.getElementById('g-dot');
+        const rollContainer = document.getElementById('roll-container'), pitchContainer = document.getElementById('pitch-container');
+        const gDot = document.getElementById('g-dot'), posDot = document.getElementById('pos-dot');
 
         startBtn.addEventListener('click', async () => {
             try {
@@ -119,11 +129,11 @@
             if (!isRecording) return;
             const [roll, pitch, ax, ay] = new TextDecoder().decode(event.target.value).split(',').map(Number);
 
-            // 姿勢指示器（水平線の回転と上下）
+            // 1. 姿勢指示器
             rollContainer.style.transform = `rotate(${-roll}deg)`;
             pitchContainer.style.transform = `translateY(${pitch * 1.5}px)`;
 
-            // Gメーター（点の移動）
+            // 2. Gメーター
             gDot.style.left = `${Math.max(0, Math.min(100, (ax / MAX_G) * 50 + 50))}%`;
             gDot.style.top = `${Math.max(0, Math.min(100, (ay / MAX_G) * 50 + 50))}%`;
 
@@ -132,6 +142,10 @@
             lastTime = now;
             velX += (ax * 9.80665) * dt; velY += (ay * 9.80665) * dt;
             posX += velX * dt; posY += velY * dt;
+
+            // 3. ポジションマップ (画面の上方向が+Yになるように計算)
+            posDot.style.left = `${Math.max(0, Math.min(100, (posX / MAX_POS) * 50 + 50))}%`;
+            posDot.style.top = `${Math.max(0, Math.min(100, (-posY / MAX_POS) * 50 + 50))}%`;
 
             // データ保存・描画
             const timeStr = ((now - startTime)/1000).toFixed(2);
