@@ -2,158 +2,64 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>フライトモニター (姿勢指示器 ＆ Gメーター)</title>
+    <title>最小構成フライトモニター</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .dashboard { display: flex; gap: 30px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end;}
+        body { font-family: sans-serif; font-size: 14px; margin: 10px; }
+        /* 計器の共通枠 (150x150の四角形) */
+        .meter-box { display: inline-block; width: 150px; height: 150px; border: 1px solid #000; position: relative; overflow: hidden; margin: 0 10px 10px 0; vertical-align: top; background: #fff; }
         
-        /* 姿勢指示器のグラフィック設定 */
-        .instrument-panel {
-            width: 250px; height: 250px;
-            background-color: #222;
-            border-radius: 50%;
-            border: 8px solid #555;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
-        }
-        #roll-container {
-            width: 100%; height: 100%;
-            position: absolute;
-            transform-origin: center center;
-            transition: transform 0.05s linear;
-        }
-        #pitch-container {
-            width: 500px; height: 500px; 
-            position: absolute;
-            top: -125px; left: -125px;
-            background: linear-gradient(to bottom, #1E90FF 50%, #8B4513 50%);
-            transition: transform 0.05s linear;
-        }
-        .crosshair {
-            position: absolute; top: 50%; left: 50%;
-            width: 120px; height: 4px;
-            background-color: #FFFF00;
-            transform: translate(-50%, -50%);
-            border-radius: 2px;
-            box-shadow: 0px 0px 5px rgba(0,0,0,0.8);
-            z-index: 10;
-        }
-        .crosshair::after { 
-            content: ''; position: absolute;
-            top: -8px; left: 55px; width: 10px; height: 10px;
-            background-color: #FF0000; border-radius: 50%;
-        }
-
-        /* --- 新規追加：Gメーター (XY加速度計) --- */
-        .instrument-container { display: flex; flex-direction: column; align-items: center; gap: 10px;}
-        .instrument-label { font-weight: bold; color: #333; font-size: 14px; }
+        /* 姿勢指示器 (線のみ) */
+        #roll-container { width: 100%; height: 100%; position: absolute; transform-origin: center; }
+        /* 水平線となる下線 */
+        #pitch-container { width: 100%; height: 400px; position: absolute; top: -250px; border-bottom: 1px solid #000; }
+        .crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 2px; background: red; transform: translate(-50%, -50%); }
         
-        .g-meter {
-            width: 250px; height: 250px;
-            background-color: #111;
-            border-radius: 50%;
-            border: 8px solid #555;
-            position: relative;
-            box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
-        /* 1G, 2Gのメモリリング */
-        .g-rings {
-            width: 100%; height: 100%;
-            border-radius: 50%;
-            background-image: radial-gradient(circle, transparent 24%, #444 25%, transparent 26%, transparent 49%, #444 50%, transparent 51%);
-            position: absolute; top: 0; left: 0;
-        }
-        /* 十字の補助線 */
-        .g-axis-v { position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: #444; transform: translateX(-50%); }
-        .g-axis-h { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #444; transform: translateY(-50%); }
+        /* Gメーター (十字線と点) */
+        .axis-v { position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background: #ccc; }
+        .axis-h { position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: #ccc; }
+        #g-dot { width: 8px; height: 8px; background: green; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        button { margin: 0 5px 10px 0; padding: 5px 10px; cursor: pointer; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
         
-        /* XYの加速度を示すドット */
-        #g-dot {
-            width: 24px; height: 24px;
-            background-color: #00FF00;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            transition: left 0.05s linear, top 0.05s linear;
-            box-shadow: 0 0 10px #00FF00, inset 0 0 5px #fff;
-            z-index: 10;
-        }
-
-        /* 操作ボタン群 */
-        .controls { display: flex; flex-direction: column; justify-content: center; gap: 10px; padding-bottom: 20px;}
-        button { padding: 12px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold;}
-        button:disabled { cursor: not-allowed; opacity: 0.6; }
-        #startBtn { background-color: #007BFF; color: white; }
-        #stopBtn { background-color: #DC3545; color: white; }
-        #csvBtn { background-color: #28A745; color: white; }
-
-        /* テーブル設定 */
-        table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
-        th { background-color: #333; color: white; text-align: center; font-size: 14px;}
-        .data-panel { max-height: 400px; overflow-y: auto; }
+        /* テーブル */
+        .table-wrap { max-height: 300px; overflow-y: auto; }
+        table { border-collapse: collapse; width: 100%; font-size: 12px; }
+        th, td { border: 1px solid #aaa; padding: 4px; text-align: right; }
+        th { background: #eee; text-align: center; }
     </style>
 </head>
 <body>
 
-    <h1>RCフライトモニター</h1>
+    <button id="startBtn">計測開始</button>
+    <button id="stopBtn" disabled>計測終了</button>
+    <button id="csvBtn" disabled>CSV保存</button>
+    <br>
+
+    <div class="meter-box">
+        <div id="roll-container"><div id="pitch-container"></div></div>
+        <div class="crosshair"></div>
+    </div>
     
-    <div class="dashboard">
-        <div class="instrument-container">
-            <div class="instrument-panel">
-                <div id="roll-container">
-                    <div id="pitch-container"></div>
-                </div>
-                <div class="crosshair"></div>
-            </div>
-            <div class="instrument-label">Attitude (姿勢)</div>
-        </div>
-
-        <div class="instrument-container">
-            <div class="g-meter">
-                <div class="g-rings"></div>
-                <div class="g-axis-v"></div>
-                <div class="g-axis-h"></div>
-                <div id="g-dot"></div>
-            </div>
-            <div class="instrument-label">G-Force (XY加速度)</div>
-        </div>
-
-        <div class="controls">
-            <button id="startBtn">計測開始 (BLE接続)</button>
-            <button id="stopBtn" disabled>計測終了</button>
-            <button id="csvBtn" disabled>CSVダウンロード</button>
-        </div>
+    <div class="meter-box">
+        <div class="axis-v"></div><div class="axis-h"></div>
+        <div id="g-dot"></div>
     </div>
 
-    <div class="data-panel">
+    <div class="table-wrap">
         <table id="dataTable">
             <thead>
                 <tr>
-                    <th>経過時間 (s)</th>
-                    <th>Roll (度)</th>
-                    <th>Pitch (度)</th>
-                    <th>Acc X (G)</th>
-                    <th>Acc Y (G)</th>
-                    <th>Vel X (m/s)</th>
-                    <th>Vel Y (m/s)</th>
-                    <th>Pos X (m)</th>
-                    <th>Pos Y (m)</th>
+                    <th>Time(s)</th><th>Roll(°)</th><th>Pitch(°)</th><th>AccX(G)</th><th>AccY(G)</th><th>VelX(m/s)</th><th>VelY(m/s)</th><th>PosX(m)</th><th>PosY(m)</th>
                 </tr>
             </thead>
-            <tbody>
-                </tbody>
+            <tbody></tbody>
         </table>
     </div>
 
     <script>
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
-
-        // Gメーターの最大スケール (デフォルトは計器の端が 2.0 G になる設定)
         const MAX_G = 2.0; 
 
         let bleDevice, bleCharacteristic;
@@ -162,29 +68,18 @@
         let velX = 0, velY = 0, posX = 0, posY = 0;
         let recordedData = [];
 
-        const startBtn = document.getElementById('startBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const csvBtn = document.getElementById('csvBtn');
+        const startBtn = document.getElementById('startBtn'), stopBtn = document.getElementById('stopBtn'), csvBtn = document.getElementById('csvBtn');
         const tbody = document.querySelector('#dataTable tbody');
-        
-        const rollContainer = document.getElementById('roll-container');
-        const pitchContainer = document.getElementById('pitch-container');
-        const gDot = document.getElementById('g-dot');
+        const rollContainer = document.getElementById('roll-container'), pitchContainer = document.getElementById('pitch-container'), gDot = document.getElementById('g-dot');
 
         startBtn.addEventListener('click', async () => {
             try {
                 if (!bleDevice) {
-                    bleDevice = await navigator.bluetooth.requestDevice({
-                        filters: [{ name: 'XIAO_ESP32C3_Accel' }],
-                        optionalServices: [SERVICE_UUID]
-                    });
+                    bleDevice = await navigator.bluetooth.requestDevice({ filters: [{ name: 'XIAO_ESP32C3_Accel' }], optionalServices: [SERVICE_UUID] });
                     bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
                 }
-
                 const server = await bleDevice.gatt.connect();
-                const service = await server.getPrimaryService(SERVICE_UUID);
-                bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
-
+                bleCharacteristic = await (await server.getPrimaryService(SERVICE_UUID)).getCharacteristic(CHARACTERISTIC_UUID);
                 await bleCharacteristic.startNotifications();
                 bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
 
@@ -192,11 +87,8 @@
                 velX = 0; velY = 0; posX = 0; posY = 0;
                 recordedData = []; tbody.innerHTML = ''; 
                 isRecording = true;
-
                 startBtn.disabled = true; stopBtn.disabled = false; csvBtn.disabled = true;
-            } catch (error) {
-                alert('Bluetooth接続エラー: ' + error);
-            }
+            } catch (e) { alert('Error: ' + e); }
         });
 
         stopBtn.addEventListener('click', async () => {
@@ -204,88 +96,49 @@
                 await bleCharacteristic.stopNotifications();
                 bleCharacteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
             }
-            isRecording = false;
-            startBtn.disabled = false; stopBtn.disabled = true; csvBtn.disabled = false;
+            isRecording = false; startBtn.disabled = false; stopBtn.disabled = true; csvBtn.disabled = false;
         });
 
         csvBtn.addEventListener('click', () => {
-            if (recordedData.length === 0) return;
-            let csvContent = "Time(s),Roll(deg),Pitch(deg),Acc_X(G),Acc_Y(G),Vel_X(m/s),Vel_Y(m/s),Pos_X(m),Pos_Y(m)\n";
-            recordedData.forEach(row => { csvContent += row.join(",") + "\n"; });
-
-            const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-            const blob = new Blob([bom, csvContent], { type: "text/csv" });
-            const url = URL.createObjectURL(blob);
+            if (!recordedData.length) return;
+            let csv = "Time(s),Roll(deg),Pitch(deg),Acc_X(G),Acc_Y(G),Vel_X(m/s),Vel_Y(m/s),Pos_X(m),Pos_Y(m)\n";
+            recordedData.forEach(r => csv += r.join(",") + "\n");
             const a = document.createElement('a');
-            a.href = url; a.download = `FlightData_${new Date().getTime()}.csv`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            a.href = URL.createObjectURL(new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: "text/csv" }));
+            a.download = `Data_${Date.now()}.csv`;
+            a.click();
         });
 
         function onDisconnected() {
-            isRecording = false;
-            startBtn.disabled = false; stopBtn.disabled = true; csvBtn.disabled = false;
+            isRecording = false; startBtn.disabled = false; stopBtn.disabled = true; csvBtn.disabled = false;
         }
 
         function handleNotifications(event) {
             if (!isRecording) return;
+            const [roll, pitch, ax, ay] = new TextDecoder().decode(event.target.value).split(',').map(Number);
 
-            const value = event.target.value;
-            const decoder = new TextDecoder('utf-8');
-            const dataString = decoder.decode(value);
-            
-            const [roll, pitch, ax, ay] = dataString.split(',').map(Number);
-
-            // 1. 姿勢指示器の更新
+            // 姿勢指示器（水平線の回転と上下）
             rollContainer.style.transform = `rotate(${-roll}deg)`;
-            pitchContainer.style.transform = `translateY(${pitch * 2}px)`;
+            pitchContainer.style.transform = `translateY(${pitch * 1.5}px)`;
 
-            // 2. Gメーターの更新
-            // 計器の中心(50%)を基準に、MAX_Gで端(0%または100%)に到達するように計算
-            let dotX = (ax / MAX_G) * 50 + 50;
-            // HTMLの座標系は上が0%なので、センサーの向きに合わせて適宜符号(±)を逆にしてください
-            let dotY = (ay / MAX_G) * 50 + 50; 
+            // Gメーター（点の移動）
+            gDot.style.left = `${Math.max(0, Math.min(100, (ax / MAX_G) * 50 + 50))}%`;
+            gDot.style.top = `${Math.max(0, Math.min(100, (ay / MAX_G) * 50 + 50))}%`;
 
-            // ドットが計器の枠外に飛び出さないように制限 (0% 〜 100%)
-            dotX = Math.max(0, Math.min(100, dotX));
-            dotY = Math.max(0, Math.min(100, dotY));
+            // 物理演算
+            const now = performance.now(), dt = (now - lastTime) / 1000;
+            lastTime = now;
+            velX += (ax * 9.80665) * dt; velY += (ay * 9.80665) * dt;
+            posX += velX * dt; posY += velY * dt;
 
-            gDot.style.left = `${dotX}%`;
-            gDot.style.top = `${dotY}%`;
-
-            // 3. 物理演算とテーブル更新
-            const currentTime = performance.now();
-            const elapsedTime = (currentTime - startTime) / 1000;
-            const dt = (currentTime - lastTime) / 1000;
-            lastTime = currentTime;
-
-            velX += (ax * 9.80665) * dt;
-            velY += (ay * 9.80665) * dt;
-            posX += velX * dt;
-            posY += velY * dt;
-
-            recordedData.push([
-                elapsedTime.toFixed(3), roll.toFixed(2), pitch.toFixed(2),
-                ax.toFixed(3), ay.toFixed(3), velX.toFixed(3), velY.toFixed(3),
-                posX.toFixed(3), posY.toFixed(3)
-            ]);
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${elapsedTime.toFixed(2)}</td>
-                <td>${roll.toFixed(1)}</td>
-                <td>${pitch.toFixed(1)}</td>
-                <td>${ax.toFixed(3)}</td>
-                <td>${ay.toFixed(3)}</td>
-                <td>${velX.toFixed(2)}</td>
-                <td>${velY.toFixed(2)}</td>
-                <td>${posX.toFixed(2)}</td>
-                <td>${posY.toFixed(2)}</td>
-            `;
-            tbody.insertBefore(tr, tbody.firstChild);
+            // データ保存・描画
+            const timeStr = ((now - startTime)/1000).toFixed(2);
+            recordedData.push([timeStr, roll.toFixed(2), pitch.toFixed(2), ax.toFixed(3), ay.toFixed(3), velX.toFixed(3), velY.toFixed(3), posX.toFixed(3), posY.toFixed(3)]);
             
-            if(tbody.children.length > 50) {
-                tbody.removeChild(tbody.lastChild);
-            }
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${timeStr}</td><td>${roll.toFixed(1)}</td><td>${pitch.toFixed(1)}</td><td>${ax.toFixed(2)}</td><td>${ay.toFixed(2)}</td><td>${velX.toFixed(2)}</td><td>${velY.toFixed(2)}</td><td>${posX.toFixed(2)}</td><td>${posY.toFixed(2)}</td>`;
+            tbody.insertBefore(tr, tbody.firstChild);
+            if(tbody.children.length > 50) tbody.removeChild(tbody.lastChild);
         }
     </script>
 </body>
