@@ -2,81 +2,133 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>加速度センサーモニター (XY平面)</title>
+    <title>フライトモニター (姿勢指示器)</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        .btn-group { margin-bottom: 20px; }
-        button { padding: 10px 20px; font-size: 16px; margin-right: 10px; cursor: pointer;}
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .dashboard { display: flex; gap: 30px; margin-bottom: 20px; flex-wrap: wrap; }
+        
+        /* 姿勢指示器のグラフィック設定 */
+        .instrument-panel {
+            width: 250px; height: 250px;
+            background-color: #222;
+            border-radius: 50%;
+            border: 8px solid #555;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
+        }
+        /* ロール（回転）するコンテナ */
+        #roll-container {
+            width: 100%; height: 100%;
+            position: absolute;
+            transform-origin: center center;
+            transition: transform 0.05s linear;
+        }
+        /* ピッチ（上下）する背景（空と地面） */
+        #pitch-container {
+            width: 500px; height: 500px; /* 回転しても隙間が出ないよう大きく */
+            position: absolute;
+            top: -125px; left: -125px;
+            background: linear-gradient(to bottom, #1E90FF 50%, #8B4513 50%);
+            transition: transform 0.05s linear;
+        }
+        /* 画面中央の基準線（自機） */
+        .crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 120px; height: 4px;
+            background-color: #FFFF00;
+            transform: translate(-50%, -50%);
+            border-radius: 2px;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+        .crosshair::after { /* 中央のポッチ */
+            content: ''; position: absolute;
+            top: -8px; left: 55px; width: 10px; height: 10px;
+            background-color: #FF0000; border-radius: 50%;
+        }
+
+        .controls { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+        button { padding: 12px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold;}
         button:disabled { cursor: not-allowed; opacity: 0.6; }
-        #csvBtn { background-color: #4CAF50; color: white; border: none; border-radius: 4px;}
-        #csvBtn:disabled { background-color: #cccccc; color: #666666;}
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: right; }
-        th { background-color: #f2f2f2; text-align: center; }
+        #startBtn { background-color: #007BFF; color: white; }
+        #stopBtn { background-color: #DC3545; color: white; }
+        #csvBtn { background-color: #28A745; color: white; }
+
+        table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
+        th { background-color: #333; color: white; text-align: center; }
+        .data-panel { max-height: 400px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-    <h1>XIAO ESP32C3 加速度モニター (XY平面)</h1>
+    <h1>RCフライトモニター (姿勢指示器搭載)</h1>
     
-    <div class="btn-group">
-        <button id="startBtn">計測開始 (BLE接続)</button>
-        <button id="stopBtn" disabled>計測終了</button>
-        <button id="csvBtn" disabled>CSVダウンロード</button>
+    <div class="dashboard">
+        <div class="instrument-panel">
+            <div id="roll-container">
+                <div id="pitch-container"></div>
+            </div>
+            <div class="crosshair"></div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn">計測開始 (BLE接続)</button>
+            <button id="stopBtn" disabled>計測終了</button>
+            <button id="csvBtn" disabled>CSVダウンロード</button>
+        </div>
     </div>
 
-    <table id="dataTable">
-        <thead>
-            <tr>
-                <th>経過時間 (s)</th>
-                <th>Acc X (G)</th>
-                <th>Acc Y (G)</th>
-                <th>Vel X (m/s)</th>
-                <th>Vel Y (m/s)</th>
-                <th>Pos X (m)</th>
-                <th>Pos Y (m)</th>
-            </tr>
-        </thead>
-        <tbody>
-            </tbody>
-    </table>
+    <div class="data-panel">
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>経過時間 (s)</th>
+                    <th>Roll (度)</th>
+                    <th>Pitch (度)</th>
+                    <th>Acc X (G)</th>
+                    <th>Acc Y (G)</th>
+                    <th>Vel X (m/s)</th>
+                    <th>Vel Y (m/s)</th>
+                    <th>Pos X (m)</th>
+                    <th>Pos Y (m)</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
 
     <script>
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
-        let bleDevice;
-        let bleCharacteristic;
+        let bleDevice, bleCharacteristic;
         let isRecording = false;
-
-        let startTime = 0;
-        let lastTime = 0;
-        
-        // 速度 (m/s) と 距離/位置 (m)
-        let velX = 0, velY = 0;
-        let posX = 0, posY = 0;
-
-        // CSV用データ保持配列
+        let startTime = 0, lastTime = 0;
+        let velX = 0, velY = 0, posX = 0, posY = 0;
         let recordedData = [];
 
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         const csvBtn = document.getElementById('csvBtn');
         const tbody = document.querySelector('#dataTable tbody');
+        
+        // グラフィック要素の取得
+        const rollContainer = document.getElementById('roll-container');
+        const pitchContainer = document.getElementById('pitch-container');
 
         startBtn.addEventListener('click', async () => {
             try {
                 if (!bleDevice) {
-                    console.log('Bluetoothデバイスをリクエスト中...');
                     bleDevice = await navigator.bluetooth.requestDevice({
                         filters: [{ name: 'XIAO_ESP32C3_Accel' }],
                         optionalServices: [SERVICE_UUID]
                     });
-                    
                     bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
                 }
 
-                console.log('GATTサーバーに接続中...');
                 const server = await bleDevice.gatt.connect();
                 const service = await server.getPrimaryService(SERVICE_UUID);
                 bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
@@ -84,22 +136,14 @@
                 await bleCharacteristic.startNotifications();
                 bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
 
-                // 変数と表示の初期化
-                startTime = performance.now();
-                lastTime = startTime;
-                velX = 0; velY = 0;
-                posX = 0; posY = 0;
-                recordedData = []; // 記録データをクリア
-                tbody.innerHTML = ''; 
+                startTime = performance.now(); lastTime = startTime;
+                velX = 0; velY = 0; posX = 0; posY = 0;
+                recordedData = []; tbody.innerHTML = ''; 
                 isRecording = true;
 
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-                csvBtn.disabled = true; // 計測中はダウンロード不可
-                console.log('計測開始');
+                startBtn.disabled = true; stopBtn.disabled = false; csvBtn.disabled = true;
             } catch (error) {
-                console.error('エラー:', error);
-                alert('Bluetooth接続に失敗しました: ' + error);
+                alert('Bluetooth接続エラー: ' + error);
             }
         });
 
@@ -109,47 +153,25 @@
                 bleCharacteristic.removeEventListener('characteristicvaluechanged', handleNotifications);
             }
             isRecording = false;
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            csvBtn.disabled = false; // 計測終了でダウンロード可能に
-            console.log('計測終了');
+            startBtn.disabled = false; stopBtn.disabled = true; csvBtn.disabled = false;
         });
 
-        // CSV出力処理
         csvBtn.addEventListener('click', () => {
-            if (recordedData.length === 0) {
-                alert("エクスポートするデータがありません。");
-                return;
-            }
+            if (recordedData.length === 0) return;
+            let csvContent = "Time(s),Roll(deg),Pitch(deg),Acc_X(G),Acc_Y(G),Vel_X(m/s),Vel_Y(m/s),Pos_X(m),Pos_Y(m)\n";
+            recordedData.forEach(row => { csvContent += row.join(",") + "\n"; });
 
-            // CSVのヘッダーを作成
-            let csvContent = "経過時間(s),Acc_X(G),Acc_Y(G),Vel_X(m/s),Vel_Y(m/s),Pos_X(m),Pos_Y(m)\n";
-            
-            // 記録データをCSV形式の文字列に変換
-            recordedData.forEach(row => {
-                csvContent += row.join(",") + "\n";
-            });
-
-            // 文字列をBlob化してBOM(文字化け防止)を付与しダウンロード
             const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
             const blob = new Blob([bom, csvContent], { type: "text/csv" });
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
-            a.href = url;
-            a.download = `AccelData_${new Date().getTime()}.csv`; // ファイル名にタイムスタンプを付与
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            a.href = url; a.download = `FlightData_${new Date().getTime()}.csv`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
         });
 
         function onDisconnected() {
-            console.log('デバイスから切断されました');
             isRecording = false;
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
-            csvBtn.disabled = false; // 切断時もダウンロード可能に
+            startBtn.disabled = false; stopBtn.disabled = true; csvBtn.disabled = false;
         }
 
         function handleNotifications(event) {
@@ -158,46 +180,52 @@
             const value = event.target.value;
             const decoder = new TextDecoder('utf-8');
             const dataString = decoder.decode(value);
-            // マイコンからはZ軸も送られてくるが、JS側でazは取得しつつも画面には使わない
-            const [ax, ay, az] = dataString.split(',').map(Number);
+            
+            // Arduinoから送られてくるデータを分割 (Roll, Pitch, AccX, AccY)
+            const [roll, pitch, ax, ay] = dataString.split(',').map(Number);
+
+            // --- 姿勢指示器グラフィックの更新 ---
+            // ロール角はそのまま回転、ピッチ角は1度あたり約2ピクセル上下にスライドさせる
+            rollContainer.style.transform = `rotate(${-roll}deg)`;
+            pitchContainer.style.transform = `translateY(${pitch * 2}px)`;
 
             const currentTime = performance.now();
             const elapsedTime = (currentTime - startTime) / 1000;
             const dt = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
 
-            // --- 物理演算 ---
-            // 1. 速度(m/s)の算出 (加速度の積分)
+            // 速度と距離の積分計算 (XY平面のみ)
             velX += (ax * 9.80665) * dt;
             velY += (ay * 9.80665) * dt;
-
-            // 2. 距離/位置(m)の算出 (速度の積分)
             posX += velX * dt;
             posY += velY * dt;
 
-            // CSV保存用に配列へ追加
+            // CSV用データ
             recordedData.push([
-                elapsedTime.toFixed(3),
-                ax.toFixed(4),
-                ay.toFixed(4),
-                velX.toFixed(4),
-                velY.toFixed(4),
-                posX.toFixed(4),
-                posY.toFixed(4)
+                elapsedTime.toFixed(3), roll.toFixed(2), pitch.toFixed(2),
+                ax.toFixed(3), ay.toFixed(3), velX.toFixed(3), velY.toFixed(3),
+                posX.toFixed(3), posY.toFixed(3)
             ]);
 
-            // 表へ行を追加（最新データが一番上になるように）
+            // テーブル先頭に行を追加（最大表示数を制限して動作を軽くする）
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${elapsedTime.toFixed(2)}</td>
+                <td>${roll.toFixed(1)}</td>
+                <td>${pitch.toFixed(1)}</td>
                 <td>${ax.toFixed(3)}</td>
                 <td>${ay.toFixed(3)}</td>
-                <td>${velX.toFixed(3)}</td>
-                <td>${velY.toFixed(3)}</td>
-                <td>${posX.toFixed(3)}</td>
-                <td>${posY.toFixed(3)}</td>
+                <td>${velX.toFixed(2)}</td>
+                <td>${velY.toFixed(2)}</td>
+                <td>${posX.toFixed(2)}</td>
+                <td>${posY.toFixed(2)}</td>
             `;
             tbody.insertBefore(tr, tbody.firstChild);
+            
+            // 古い表示行を削除してメモリを節約（50行残す）
+            if(tbody.children.length > 50) {
+                tbody.removeChild(tbody.lastChild);
+            }
         }
     </script>
 </body>
