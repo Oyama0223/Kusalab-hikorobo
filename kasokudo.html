@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>フライトモニター (姿勢指示器)</title>
+    <title>フライトモニター (姿勢指示器 ＆ Gメーター)</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .dashboard { display: flex; gap: 30px; margin-bottom: 20px; flex-wrap: wrap; }
+        .dashboard { display: flex; gap: 30px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-end;}
         
         /* 姿勢指示器のグラフィック設定 */
         .instrument-panel {
@@ -17,22 +17,19 @@
             overflow: hidden;
             box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
         }
-        /* ロール（回転）するコンテナ */
         #roll-container {
             width: 100%; height: 100%;
             position: absolute;
             transform-origin: center center;
             transition: transform 0.05s linear;
         }
-        /* ピッチ（上下）する背景（空と地面） */
         #pitch-container {
-            width: 500px; height: 500px; /* 回転しても隙間が出ないよう大きく */
+            width: 500px; height: 500px; 
             position: absolute;
             top: -125px; left: -125px;
             background: linear-gradient(to bottom, #1E90FF 50%, #8B4513 50%);
             transition: transform 0.05s linear;
         }
-        /* 画面中央の基準線（自機） */
         .crosshair {
             position: absolute; top: 50%; left: 50%;
             width: 120px; height: 4px;
@@ -42,35 +39,87 @@
             box-shadow: 0px 0px 5px rgba(0,0,0,0.8);
             z-index: 10;
         }
-        .crosshair::after { /* 中央のポッチ */
+        .crosshair::after { 
             content: ''; position: absolute;
             top: -8px; left: 55px; width: 10px; height: 10px;
             background-color: #FF0000; border-radius: 50%;
         }
 
-        .controls { display: flex; flex-direction: column; justify-content: center; gap: 10px; }
+        /* --- 新規追加：Gメーター (XY加速度計) --- */
+        .instrument-container { display: flex; flex-direction: column; align-items: center; gap: 10px;}
+        .instrument-label { font-weight: bold; color: #333; font-size: 14px; }
+        
+        .g-meter {
+            width: 250px; height: 250px;
+            background-color: #111;
+            border-radius: 50%;
+            border: 8px solid #555;
+            position: relative;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+        /* 1G, 2Gのメモリリング */
+        .g-rings {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background-image: radial-gradient(circle, transparent 24%, #444 25%, transparent 26%, transparent 49%, #444 50%, transparent 51%);
+            position: absolute; top: 0; left: 0;
+        }
+        /* 十字の補助線 */
+        .g-axis-v { position: absolute; left: 50%; top: 0; width: 2px; height: 100%; background: #444; transform: translateX(-50%); }
+        .g-axis-h { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: #444; transform: translateY(-50%); }
+        
+        /* XYの加速度を示すドット */
+        #g-dot {
+            width: 24px; height: 24px;
+            background-color: #00FF00;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            transition: left 0.05s linear, top 0.05s linear;
+            box-shadow: 0 0 10px #00FF00, inset 0 0 5px #fff;
+            z-index: 10;
+        }
+
+        /* 操作ボタン群 */
+        .controls { display: flex; flex-direction: column; justify-content: center; gap: 10px; padding-bottom: 20px;}
         button { padding: 12px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold;}
         button:disabled { cursor: not-allowed; opacity: 0.6; }
         #startBtn { background-color: #007BFF; color: white; }
         #stopBtn { background-color: #DC3545; color: white; }
         #csvBtn { background-color: #28A745; color: white; }
 
+        /* テーブル設定 */
         table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
-        th { background-color: #333; color: white; text-align: center; }
+        th { background-color: #333; color: white; text-align: center; font-size: 14px;}
         .data-panel { max-height: 400px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-    <h1>RCフライトモニター (姿勢指示器搭載)</h1>
+    <h1>RCフライトモニター</h1>
     
     <div class="dashboard">
-        <div class="instrument-panel">
-            <div id="roll-container">
-                <div id="pitch-container"></div>
+        <div class="instrument-container">
+            <div class="instrument-panel">
+                <div id="roll-container">
+                    <div id="pitch-container"></div>
+                </div>
+                <div class="crosshair"></div>
             </div>
-            <div class="crosshair"></div>
+            <div class="instrument-label">Attitude (姿勢)</div>
+        </div>
+
+        <div class="instrument-container">
+            <div class="g-meter">
+                <div class="g-rings"></div>
+                <div class="g-axis-v"></div>
+                <div class="g-axis-h"></div>
+                <div id="g-dot"></div>
+            </div>
+            <div class="instrument-label">G-Force (XY加速度)</div>
         </div>
 
         <div class="controls">
@@ -104,6 +153,9 @@
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
+        // Gメーターの最大スケール (デフォルトは計器の端が 2.0 G になる設定)
+        const MAX_G = 2.0; 
+
         let bleDevice, bleCharacteristic;
         let isRecording = false;
         let startTime = 0, lastTime = 0;
@@ -115,9 +167,9 @@
         const csvBtn = document.getElementById('csvBtn');
         const tbody = document.querySelector('#dataTable tbody');
         
-        // グラフィック要素の取得
         const rollContainer = document.getElementById('roll-container');
         const pitchContainer = document.getElementById('pitch-container');
+        const gDot = document.getElementById('g-dot');
 
         startBtn.addEventListener('click', async () => {
             try {
@@ -181,33 +233,42 @@
             const decoder = new TextDecoder('utf-8');
             const dataString = decoder.decode(value);
             
-            // Arduinoから送られてくるデータを分割 (Roll, Pitch, AccX, AccY)
             const [roll, pitch, ax, ay] = dataString.split(',').map(Number);
 
-            // --- 姿勢指示器グラフィックの更新 ---
-            // ロール角はそのまま回転、ピッチ角は1度あたり約2ピクセル上下にスライドさせる
+            // 1. 姿勢指示器の更新
             rollContainer.style.transform = `rotate(${-roll}deg)`;
             pitchContainer.style.transform = `translateY(${pitch * 2}px)`;
 
+            // 2. Gメーターの更新
+            // 計器の中心(50%)を基準に、MAX_Gで端(0%または100%)に到達するように計算
+            let dotX = (ax / MAX_G) * 50 + 50;
+            // HTMLの座標系は上が0%なので、センサーの向きに合わせて適宜符号(±)を逆にしてください
+            let dotY = (ay / MAX_G) * 50 + 50; 
+
+            // ドットが計器の枠外に飛び出さないように制限 (0% 〜 100%)
+            dotX = Math.max(0, Math.min(100, dotX));
+            dotY = Math.max(0, Math.min(100, dotY));
+
+            gDot.style.left = `${dotX}%`;
+            gDot.style.top = `${dotY}%`;
+
+            // 3. 物理演算とテーブル更新
             const currentTime = performance.now();
             const elapsedTime = (currentTime - startTime) / 1000;
             const dt = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
 
-            // 速度と距離の積分計算 (XY平面のみ)
             velX += (ax * 9.80665) * dt;
             velY += (ay * 9.80665) * dt;
             posX += velX * dt;
             posY += velY * dt;
 
-            // CSV用データ
             recordedData.push([
                 elapsedTime.toFixed(3), roll.toFixed(2), pitch.toFixed(2),
                 ax.toFixed(3), ay.toFixed(3), velX.toFixed(3), velY.toFixed(3),
                 posX.toFixed(3), posY.toFixed(3)
             ]);
 
-            // テーブル先頭に行を追加（最大表示数を制限して動作を軽くする）
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${elapsedTime.toFixed(2)}</td>
@@ -222,7 +283,6 @@
             `;
             tbody.insertBefore(tr, tbody.firstChild);
             
-            // 古い表示行を削除してメモリを節約（50行残す）
             if(tbody.children.length > 50) {
                 tbody.removeChild(tbody.lastChild);
             }
