@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News | サメ型ドローン「フカヒレ」プロジェクト</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 共通 CSS --- */
+        :root {
+            --main-black: #222222;
+            --dark-gray: #444444;
+            --medium-gray: #888888;
+            --light-gray: #f4f4f4;
+            --border-gray: #dddddd;
+            --text-color: #333333;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            line-height: 1.8;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+        header {
+            background: var(--white);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .logo a { display: flex; align-items: center; text-decoration: none; }
+        .logo-img { height: 40px; width: auto; display: block; transition: opacity 0.3s; }
+        .logo-img:hover { opacity: 0.8; }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 10px 20px;
+            min-height: 60px;
+        }
+        .logo { font-weight: bold; font-size: 1.2rem; color: var(--main-black); letter-spacing: 0.05em; }
+        nav ul { list-style: none; display: flex; margin: 0; padding: 0; }
+        nav ul li { margin-left: 20px; }
+        nav ul li a { text-decoration: none; color: var(--dark-gray); font-weight: bold; transition: color 0.3s; }
+        nav ul li a:hover, nav ul li a.active { color: var(--main-black); border-bottom: 2px solid var(--main-black); padding-bottom: 5px;}
+
+        /* コンポーネント */
+        .container { max-width: 1000px; margin: 0 auto; padding: 5rem 20px; }
+        .section-title { text-align: center; font-size: 2.2rem; color: var(--main-black); margin-bottom: 3rem; position: relative; }
+        .section-title::after { content: ''; display: block; width: 40px; height: 3px; background: var(--main-black); margin: 15px auto; }
+        footer { background: #111111; color: rgba(255,255,255,0.5); text-align: center; padding: 2.5rem; font-size: 0.8rem; letter-spacing: 0.05em; }
+        /* サブページ用ミニヒーロー */
+        .sub-hero { background: var(--main-black); padding: 4rem 20px; text-align: center; color: var(--white); }
+        .sub-hero h1 { margin: 0; font-size: 2.5rem; letter-spacing: 0.05em; }
+
+        /* ▼ News一覧用のリンクカードスタイル ▼ */
+        .news-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .news-link-card {
+            display: flex;
+            align-items: baseline; /* テキストのベースラインで揃える */
+            gap: 1.5rem;
+            background: var(--white);
+            padding: 1.5rem 2rem;
+            border-radius: 8px;
+            border-left: 6px solid var(--main-black);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--border-gray);
+        }
+        .news-link-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+        }
+        .news-date {
+            color: var(--medium-gray);
+            font-size: 0.95rem;
+            white-space: nowrap; /* 日付が改行されないようにする */
+        }
+        .news-link-card h3 {
+            margin: 0;
+            color: var(--main-black);
+            font-size: 1.2rem;
+            line-height: 1.5;
+        }
+
+        /* ▼ スマホ対応（レスポンシブ） ▼ */
+        @media (max-width: 768px) {
+            nav { flex-direction: column; padding: 15px 0; gap: 15px; }
+            nav ul { justify-content: center; flex-wrap: wrap; gap: 10px; }
+            nav ul li { margin: 0 10px; }
+            .container { padding: 3rem 20px; }
+            .news-link-card { 
+                flex-direction: column; /* スマホでは縦並びに */
+                align-items: flex-start;
+                gap: 0.5rem;
+                padding: 1.2rem 1.5rem; 
+            }
+            .news-date { font-size: 0.85rem; }
+            .news-link-card h3 { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <div class="logo">
+            <a href="index.html">
+                <img src="logo.png" alt="Project フカヒレ" class="logo-img">
+            </a>
+        </div>
+        <ul>
+            <li><a href="index.html">Top</a></li>
+            <li><a href="about.html">About Us</a></li>
+            <li><a href="news.html">News</a></li>
+            <li><a href="event.html" class="active">Event</a></li>
+        </ul>
+    </nav>
+</header>
+
+<section class="sub-hero">
+    <h1>Event</h1>
+    <p>イベント情報</p>
+</section>
+
+<main>
+    <section class="container">
+        <h1>今後のイベント</h1>
+        <div class="news-list">
+                        <a href="26kousensai.html" class="news-link-card">
+                <span class="news-date">2026.10.31(土)-2026.11.01(日)</span>
+                <h3>都立産業技術高専 荒川キャンパス"高専祭" 実機展示&飛行パフォーマンス</h3>
+            </a>
+            <h1>終了したイベント</h1>
+            <a href="https://indoor-flight.com/archive/15" class="news-link-card">
+                <span class="news-date">2026.09.19(土)-2026.09.20(日)</span>
+                <h3>第22回全日本学生屋内飛行ロボットコンテスト 統合部門出場</h3>
+            </a>
+            
+            <a href="https://indoor-flight.com/archive/14" class="news-link-card">
+                <span class="news-date">2025.09.26(金)-2025.09.28(日)</span>
+                <h3>
+第21回全日本学生室内飛行ロボットコンテスト 一般部門出場</h3>
+            </a>
+
+        </div>
+
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 東京都立産業技術高等専門学校 フカヒレチーム</p>
+</footer>
+
+</body>
+</html>
