@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>魚型ロボット 周波数応答試験</title>
+<style>
+/* Layout: bench instrument. Left rail = conditions / safety / sensor, right = progress, response chart, results. Stacks on phones. */
+:root {
+  --bg: #eef1f4;
+  --panel: #ffffff;
+  --ink: #16202a;
+  --muted: #5a6673;
+  --line: #d3dae1;
+  --soft: #e7ecf0;
+  --accent: #c0141c;      /* 現在値・停止 */
+  --series: #1f5c99;      /* 測定点 */
+  --series-soft: rgba(31, 92, 153, 0.14);
+  --ok: #1d7a46; --ok-bg: #e3f2e9;
+  --warn: #9a5b00; --warn-bg: #fdf0d8;
+  --bad: #b3121a; --bad-bg: #fde6e7;
+  --info-bg: #e4eef8;
+  --font: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1318; --panel: #151c23; --ink: #e3e8ed; --muted: #95a1ad; --line: #2a343e; --soft: #1d262f;
+    --accent: #ff5a61; --series: #5aa0e6; --series-soft: rgba(90, 160, 230, 0.18);
+    --ok: #5fd08f; --ok-bg: #15301f; --warn: #f0b350; --warn-bg: #33270f; --bad: #ff6b72; --bad-bg: #3a1a1c; --info-bg: #18283a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1318; --panel: #151c23; --ink: #e3e8ed; --muted: #95a1ad; --line: #2a343e; --soft: #1d262f;
+  --accent: #ff5a61; --series: #5aa0e6; --series-soft: rgba(90, 160, 230, 0.18);
+  --ok: #5fd08f; --ok-bg: #15301f; --warn: #f0b350; --warn-bg: #33270f; --bad: #ff6b72; --bad-bg: #3a1a1c; --info-bg: #18283a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.55; }
+.app { max-width: 1320px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+header { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+h1 { font-size: 1.35rem; margin: 0; letter-spacing: 0.02em; }
+.sub { margin: 2px 0 0; color: var(--muted); font-size: 0.82rem; }
+.conn { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; min-width: 0; }
+.card h2 { font-size: 0.95rem; margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.card h2 small { font-weight: 400; color: var(--muted); font-size: 0.75rem; }
+.field { display: grid; grid-template-columns: minmax(0, 1fr) 104px 34px; gap: 8px; align-items: center; margin-bottom: 7px; }
+.field label { font-size: 0.84rem; }
+.field .u { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); }
+input[type=number] { width: 100%; font-family: var(--mono); font-size: 0.88rem; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--ink); text-align: right; }
+input[type=number]:disabled { opacity: 0.6; }
+select { font-family: var(--font); font-size: 0.82rem; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--bg); color: var(--ink); }
+.derived { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; }
+.hint { font-size: 0.76rem; color: var(--muted); margin: 6px 0 0; }
+button { font-family: var(--font); cursor: pointer; border-radius: 6px; font-size: 0.86rem; padding: 7px 14px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+button:hover:not(:disabled) { border-color: var(--ink); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.primary { background: var(--ink); color: var(--panel); border-color: var(--ink); font-weight: 700; }
+button.stop { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+button.small { font-size: 0.78rem; padding: 5px 10px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row-btn { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+.pill.bad { background: var(--bad-bg); color: var(--bad); }
+.pill.info { background: var(--info-bg); color: var(--series); }
+.check { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; font-size: 0.82rem; margin-bottom: 8px; }
+.meter { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--ok); }
+.meter i.warn { background: var(--warn); } .meter i.bad { background: var(--bad); }
+.check .v { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+.readout { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; margin-bottom: 10px; }
+.readout div { background: var(--panel); padding: 8px 10px; display: flex; flex-direction: column; min-width: 0; }
+.readout .k { font-size: 0.72rem; color: var(--muted); }
+.readout .v { font-family: var(--mono); font-size: 1rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.readout .v small { font-size: 0.7rem; color: var(--muted); font-weight: 400; margin-left: 2px; }
+.progress { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+@media (max-width: 640px) { .progress { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.progress div { background: var(--panel); padding: 9px 12px; min-width: 0; }
+.progress .k { font-size: 0.72rem; color: var(--muted); display: block; }
+.progress .v { font-family: var(--mono); font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bar { height: 6px; background: var(--soft); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--series); transition: width 0.3s; }
+.status-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.chart-head { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.chart-head h2 { margin: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.76rem; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+#chart { display: block; width: 100%; height: 340px; }
+.peak { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.86rem; margin-top: 6px; }
+.peak b { font-family: var(--mono); font-size: 1.05rem; }
+.tablewrap { max-height: 300px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+th, td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--soft); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--panel); font-weight: 600; color: var(--muted); font-size: 0.76rem; border-bottom: 1px solid var(--line); }
+td { font-family: var(--mono); }
+tr.is-peak td { background: var(--series-soft); font-weight: 700; }
+tr.is-now td { color: var(--accent); }
+.log { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); max-height: 150px; overflow: auto; white-space: pre-wrap; margin: 0; }
+.notice { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 10px 12px; font-size: 0.82rem; }
+.notice[hidden] { display: none; }
+.cal { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.cal .res { grid-column: 1 / -1; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+.mono { font-family: var(--mono); }
+#stateMsg[data-kind=ok] { color: var(--ok); } #stateMsg[data-kind=warn] { color: var(--warn); } #stateMsg[data-kind=bad] { color: var(--bad); } #stateMsg[data-kind=info] { color: var(--series); }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div>
+      <h1>魚型ロボット 周波数応答試験</h1>
+      <p class="sub">サーボで正弦加振し、周波数ごとの加速度センサー Z 軸の最大値（絶対値）を記録します。XIAO ESP32C3＋KXR94-2050＋MG92B 用。</p>
+    </div>
+    <div class="conn">
+      <span class="pill" id="connPill">未接続</span>
+      <button class="primary" id="btnConnect" type="button">装置に接続</button>
+      <button id="btnReconnect" type="button" hidden>再接続</button>
+      <button id="btnDisconnect" type="button" hidden>切断</button>
+      <label class="pill" for="demoSpeed" title="装置なしで画面とファイル出力を試します">デモ
+        <select id="demoSpeed" aria-label="デモの再生速度"><option value="20">20倍速</option><option value="5">5倍速</option><option value="1">実時間</option></select>
+      </label>
+      <button id="btnDemo" type="button">デモで試す</button>
+    </div>
+  </header>
+
+  <div class="notice" id="bleNotice" hidden></div>
+
+  <main class="layout">
+    <section class="col" aria-label="設定">
+      <div class="card">
+        <h2>試験条件</h2>
+        <div class="field"><label for="fStart">開始周波数</label><input type="number" id="fStart" step="0.1" min="0.1" max="20"><span class="u">Hz</span></div>
+        <div class="field"><label for="fEnd">終了周波数</label><input type="number" id="fEnd" step="0.1" min="0.1" max="20"><span class="u">Hz</span></div>
+        <div class="field"><label for="fStep">周波数の刻み</label><input type="number" id="fStep" step="0.01" min="0.01" max="5"><span class="u">Hz</span></div>
+        <div class="field"><label for="dwell">1周波数あたりの測定時間</label><input type="number" id="dwell" step="1" min="1" max="60"><span class="u">s</span></div>
+        <div class="field"><label for="amp">サーボ振幅（片振幅）</label><input type="number" id="amp" step="1" min="1" max="60"><span class="u">°</span></div>
+        <div class="field"><label for="settle">集計から除く最初の時間</label><input type="number" id="settle" step="0.5" min="0" max="60"><span class="u">s</span></div>
+        <div class="field"><label for="lpf">ローパスフィルタ</label><input type="number" id="lpf" step="1" min="1" max="200"><span class="u">Hz</span></div>
+        <div class="derived"><span id="dSteps">—</span><span id="dTime">—</span></div>
+        <p class="hint">周波数を切り替えた直後の過渡振動を除くため、各周波数の最初の数秒は最大値の集計から外します（0 で全区間）。この値と感度は測定後に変えても再集計されます。</p>
+        <div class="row-btn" style="margin-top:12px">
+          <button class="primary" id="btnStart" type="button" disabled>測定開始</button>
+          <button class="stop" id="btnStop" type="button" disabled>停止</button>
+        </div>
+        <p class="hint">開始すると前回の結果は消えます。必要なら先に CSV を保存してください。</p>
+      </div>
+
+      <div class="card">
+        <h2>安全チェック <small>MG92B 4.8 V 定格で判定</small></h2>
+        <div class="check">
+          <span>サーボ速度（最大周波数で必要な角速度）</span><span class="v" id="spdV">—</span>
+          <div class="meter"><i id="spdBar"></i></div>
+        </div>
+        <div class="field"><label for="inertia">負荷の慣性モーメント（任意）</label><input type="number" id="inertia" step="100" min="0" placeholder="未入力"><span class="u">g·cm²</span></div>
+        <div class="check">
+          <span>必要トルク（剛体として回す場合）</span><span class="v" id="trqV">—</span>
+          <div class="meter"><i id="trqBar"></i></div>
+        </div>
+        <p class="hint" id="safeMsg">角速度の上限 0.13 s/60°（約 460 °/s）、停動トルク 3.1 kgf·cm（0.30 N·m）を基準にしています。</p>
+      </div>
+
+      <div class="card">
+        <h2>センサー（Z 軸）</h2>
+        <div class="readout">
+          <div><span class="k">出力電圧</span><span class="v" id="rMean">—<small>mV</small></span></div>
+          <div><span class="k">ゼロ点</span><span class="v" id="rOffset">—<small>mV</small></span></div>
+          <div><span class="k">ゼロ点からの差</span><span class="v" id="rDev">—<small>m/s²</small></span></div>
+        </div>
+        <div class="field"><label for="sens">感度</label><input type="number" id="sens" step="1" min="50" max="2000"><span class="u">mV/g</span></div>
+        <p class="hint">既定値 500 mV/g は、3.3 V 給電の KXR94（660 mV/g）に 100 kΩ のプルダウンを付けた場合の計算値です。重力を使った校正で実測値に置き換えてください。</p>
+        <div class="cal">
+          <button class="small" id="btnCalUp" type="button" disabled>Z 上向き（+1 g）を記録</button>
+          <button class="small" id="btnCalDown" type="button" disabled>Z 下向き（−1 g）を記録</button>
+          <button class="small" id="btnZero" type="button" disabled>ゼロ点を測る</button>
+          <button class="small" id="btnCalApply" type="button" disabled>校正値を感度に入れる</button>
+          <span class="res" id="calRes">センサーを静止させ、Z 軸を真上・真下に向けて各ボタンを押すと、2 秒間の平均から感度を求めます。</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="col" aria-label="結果">
+      <div class="card">
+        <div class="status-line"><span class="pill" id="statePill">待機中</span><span id="stateMsg" class="hint" style="margin:0"></span></div>
+        <div class="progress">
+          <div><span class="k">ステップ</span><span class="v" id="pStep">—</span></div>
+          <div><span class="k">現在の周波数</span><span class="v" id="pFreq">—</span></div>
+          <div><span class="k">直近の最大加速度</span><span class="v" id="pNow">—</span></div>
+          <div><span class="k">残り時間</span><span class="v" id="pRemain">—</span></div>
+        </div>
+        <div class="bar"><i id="pBar"></i></div>
+      </div>
+
+      <div class="card">
+        <div class="chart-head">
+          <h2>周波数応答：最大加速度（絶対値）</h2>
+          <div class="legend">
+            <span><i style="background:var(--series)"></i>各周波数の最大値</span>
+            <span><i style="background:var(--accent)"></i>測定中</span>
+            <label for="unitSel">単位 <select id="unitSel"><option value="ms2">m/s²</option><option value="g">g</option></select></label>
+          </div>
+        </div>
+        <canvas id="chart" role="img" aria-label="周波数に対する最大加速度のグラフ"></canvas>
+        <div class="peak" id="peakBox"><span class="hint" style="margin:0">測定するとピーク（共振周波数の推定）がここに出ます。</span></div>
+      </div>
+
+      <div class="card">
+        <h2>記録 <small id="recCount"></small></h2>
+        <div class="row-btn" style="margin-bottom:10px">
+          <button id="btnCsv" type="button" disabled>集計 CSV をダウンロード</button>
+          <button id="btnRaw" type="button" disabled>生データ CSV をダウンロード</button>
+          <button id="btnPng" type="button" disabled>グラフ PNG をダウンロード</button>
+        </div>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>周波数 [Hz]</th><th>最大加速度 [m/s²]</th><th>最大加速度 [g]</th><th>最大偏差 [mV]</th><th>集計区間数</th></tr></thead>
+            <tbody id="tbody"><tr><td colspan="5" style="text-align:center;font-family:var(--font);color:var(--muted)">まだ記録がありません</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>ログ</h2>
+        <pre class="log" id="log"></pre>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+'use strict';
+// ====================== 装置との約束（ファームウェアと同じ値） ======================
+const SVC_UUID  = '710131be-5824-4053-8333-81797f0a6825';
+const DATA_UUID = '63bb511b-9139-4b71-a5fc-070bfb231394';
+const CMD_UUID  = '81f97ceb-2802-4164-aef7-9c636c0357aa';
+const NAME_PREFIX = 'FishVib';
+const WIN_MS = 100;             // 装置が最大値を送る区間
+const ZERO_MS = 2500, RAMP_MS = 1000;
+const G = 9.80665;
+const ST = { IDLE: 0, ZEROING: 1, RAMP_UP: 2, RUNNING: 3, RAMP_DOWN: 4 };
+const ST_LABEL = ['待機中', 'ゼロ点測定中', '振幅立ち上げ中', '測定中', '振幅立ち下げ中'];
+const RES_MSG = {
+  1: ['ok', '測定が完了しました。'],
+  2: ['warn', '停止しました。'],
+  3: ['bad', '通信が切れたため、装置が安全のため加振を止めました。'],
+  4: ['bad', '装置が条件を受け付けませんでした（範囲外の値）。'],
+  5: ['bad', 'センサー出力が範囲外です。配線（Out Z → D1、100 kΩ と 0.1 µF）と電源を確認してください。'],
+  6: ['ok', 'ゼロ点を測りました。'],
+};
+// MG92B（Adafruit 掲載値：0.13 s/60° @4.8 V、停動トルク 3.1 kgf·cm @4.8 V）
+const SERVO_MAX_DPS = 60 / 0.13;
+const SERVO_STALL_NM = 3.1 * 0.0980665;
+
+// ====================== 設定 ======================
+const DEFAULTS = { fStart: 0.5, fEnd: 5.0, fStep: 0.1, dwell: 10, amp: 10, settle: 2, lpf: 20, sens: 500, inertia: '', unit: 'ms2' };
+const STORE = 'fishvib-tester-v1';
+let cfg = { ...DEFAULTS };
+try { const s = JSON.parse(localStorage.getItem(STORE) || 'null'); if (s) cfg = { ...DEFAULTS, ...s }; } catch (e) {}
+const saveCfg = () => { try { localStorage.setItem(STORE, JSON.stringify(cfg)); } catch (e) {} };
+
+const $ = (id) => document.getElementById(id);
+const fields = ['fStart', 'fEnd', 'fStep', 'dwell', 'amp', 'settle', 'lpf', 'sens', 'inertia'];
+for (const k of fields) {
+  $(k).value = cfg[k];
+  $(k).addEventListener('input', () => {
+    const v = $(k).value.trim();
+    cfg[k] = (k === 'inertia' && v === '') ? '' : parseFloat(v);
+    saveCfg(); updateDerived();
+    if (k === 'settle' || k === 'sens') { rebuildSummary(); render(); }
+  });
+}
+$('unitSel').value = cfg.unit;
+$('unitSel').addEventListener('change', () => { cfg.unit = $('unitSel').value; saveCfg(); render(); });
+
+// ====================== 状態 ======================
+let link = null;               // BleLink または DemoLink
+let dev = { state: ST.IDLE, result: 0, step: 0, nSteps: 0, freq: 0, amp: 0, mean: NaN, offset: NaN, offsetValid: false };
+let run = null;                // 1回の測定の記録
+let lastData = null;           // 直近のデータパケット
+let calCollect = null, cal = { up: NaN, down: NaN };
+let saved = true;
+let statusSeen = false;      // 接続直後の最初の状態パケットでは古い終了理由を表示しない
+let wakeLock = null;
+
+function logMsg(s) {
+  const t = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+  const el = $('log'); el.textContent = `${t}  ${s}\n` + el.textContent;
+}
+
+function plan() {
+  const fs = cfg.fStart, fe = cfg.fEnd, df = cfg.fStep;
+  const ok = [fs, fe, df, cfg.dwell, cfg.amp, cfg.lpf].every(Number.isFinite)
+    && fs >= 0.05 && fs <= 20 && fe >= 0.05 && fe <= 20 && df >= 0.01 && df <= 5
+    && cfg.dwell >= 1 && cfg.dwell <= 60 && cfg.amp > 0 && cfg.amp <= 60 && cfg.lpf >= 1 && cfg.lpf <= 200;
+  if (!ok) return null;
+  const n = Math.round(Math.abs(fe - fs) / df) + 1;
+  if (n > 5000) return null;
+  const dir = fe >= fs ? 1 : -1;
+  const freqs = Array.from({ length: n }, (_, i) => +(fs + dir * df * i).toFixed(4));
+  return { n, freqs, fMin: Math.min(fs, fe), fMax: Math.max(fs, fe), totalS: n * cfg.dwell + (ZERO_MS + 2 * RAMP_MS) / 1000 };
+}
+
+function fmtDur(s) {
+  if (!Number.isFinite(s) || s < 0) return '—';
+  s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  return h ? `${h}時間${m}分` : (m ? `${m}分${String(r).padStart(2, '0')}秒` : `${r}秒`);
+}
+
+function updateDerived() {
+  const p = plan();
+  $('dSteps').textContent = p ? `${p.n} 周波数` : '条件を確認してください';
+  $('dTime').textContent = p ? `所要時間 約 ${fmtDur(p.totalS)}` : '';
+  // 安全チェック
+  const spd = p ? 2 * Math.PI * p.fMax * cfg.amp : NaN;
+  setMeter('spd', spd / SERVO_MAX_DPS, Number.isFinite(spd) ? `${spd.toFixed(0)} °/s（上限の ${(100 * spd / SERVO_MAX_DPS).toFixed(0)}%）` : '—', 0.6, 0.9);
+  const J = parseFloat(cfg.inertia);
+  if (p && Number.isFinite(J) && J > 0) {
+    const T = J * 1e-7 * (2 * Math.PI * p.fMax) ** 2 * (cfg.amp * Math.PI / 180);
+    setMeter('trq', T / SERVO_STALL_NM, `${T.toFixed(3)} N·m（停動の ${(100 * T / SERVO_STALL_NM).toFixed(0)}%）`, 0.3, 0.6);
+  } else setMeter('trq', NaN, '慣性モーメント未入力', 0, 0);
+  let msg = '角速度の上限 0.13 s/60°（約 460 °/s）、停動トルク 3.1 kgf·cm（0.30 N·m）を基準にしています。';
+  if (spd / SERVO_MAX_DPS > 0.9) msg = '最大周波数ではサーボが追従できず、実際の振幅が指令より小さくなる可能性が高いです。振幅か最大周波数を下げてください。';
+  $('safeMsg').textContent = msg;
+  updateButtons();
+}
+function setMeter(id, r, text, warnAt, badAt) {
+  $(id + 'V').textContent = text;
+  const bar = $(id + 'Bar');
+  bar.style.width = Number.isFinite(r) ? Math.min(100, r * 100) + '%' : '0';
+  bar.className = !Number.isFinite(r) ? '' : (r > badAt ? 'bad' : (r > warnAt ? 'warn' : ''));
+}
+
+// ====================== 受信パケットの処理 ======================
+function onPacket(dv) {
+  const type = dv.getUint8(0);
+  if (type === 1 && dv.byteLength >= 12) {
+    const p = { state: dv.getUint8(1), step: dv.getUint16(2, true), freq: dv.getUint16(4, true) / 1000,
+                tWin: dv.getUint16(6, true), dev: dv.getFloat32(8, true) };
+    lastData = p;
+    if (run && !run.finished) addRaw(p);
+  } else if (type === 2 && dv.byteLength >= 20) {
+    const prev = dev.state, prevRes = dev.result, first = !statusSeen;
+    statusSeen = true;
+    dev = { state: dv.getUint8(1), result: dv.getUint8(2), offsetValid: !!(dv.getUint8(3) & 1),
+            step: dv.getUint16(4, true), nSteps: dv.getUint16(6, true), freq: dv.getUint16(8, true) / 1000,
+            amp: dv.getUint16(10, true) / 10, mean: dv.getFloat32(12, true), offset: dv.getFloat32(16, true) };
+    if (calCollect) { calCollect.vals.push(dev.mean); if (performance.now() > calCollect.until) finishCal(); }
+    if (run && !run.finished && dev.offsetValid) run.offsetMv = dev.offset;
+    if (!first && (dev.state !== prev || dev.result !== prevRes)) onStateChange(prev, prevRes);
+    renderStatus();
+  }
+}
+
+function onStateChange(prevState, prevRes) {
+  if (dev.state !== prevState && dev.state !== ST.IDLE) logMsg(`装置：${ST_LABEL[dev.state] || dev.state}`);
+  const becameIdle = dev.state === ST.IDLE && prevState !== ST.IDLE;
+  const newResult = dev.state === ST.IDLE && dev.result !== prevRes && dev.result !== 0;
+  if ((becameIdle || newResult) && RES_MSG[dev.result]) {
+    const [kind, msg] = RES_MSG[dev.result];
+    setStateMsg(kind, msg); logMsg(msg);
+    if (run && !run.finished && dev.result !== 6) finishRun(dev.result);
+  }
+}
+
+function addRaw(p) {
+  const raw = { step: p.step, freq: p.freq, tWin: p.tWin, dev: p.dev, devTime: (p.step * run.dwellMs + p.tWin) / 1000 };
+  run.raw.push(raw);
+  if (!run.byStep.has(p.step)) run.byStep.set(p.step, []);
+  run.byStep.get(p.step).push(raw);
+  run.curStep = p.step; run.started = true; saved = false;
+  summarizeStep(p.step);
+  scheduleRender();
+}
+
+// 1つの周波数の集計：整定時間より後に始まった区間の最大値
+function summarizeStep(step) {
+  const rows = run.byStep.get(step) || [];
+  const settleMs = Math.max(0, (Number.isFinite(cfg.settle) ? cfg.settle : 0) * 1000);
+  const s = { step, freq: rows.length ? rows[0].freq : run.freqs[step], maxIncl: -1, maxAll: -1, nIncl: 0, nAll: rows.length };
+  for (const r of rows) {
+    s.maxAll = Math.max(s.maxAll, r.dev);
+    if (r.tWin >= settleMs) { s.maxIncl = Math.max(s.maxIncl, r.dev); s.nIncl++; }
+  }
+  run.summary.set(step, s);
+}
+
+function rebuildSummary() {
+  if (!run) return;
+  run.summary = new Map();
+  for (const step of run.byStep.keys()) summarizeStep(step);
+}
+
+const toAccel = (mV) => mV / cfg.sens * G;                     // m/s²
+const unitVal = (ms2) => cfg.unit === 'g' ? ms2 / G : ms2;
+const unitName = () => cfg.unit === 'g' ? 'g' : 'm/s²';
+
+// 完了したステップ（集計区間あり）の配列
+function completedSteps() {
+  if (!run) return [];
+  const out = [];
+  for (const s of run.summary.values()) {
+    const done = run.finished || s.step < run.curStep;
+    if (s.nIncl > 0 && done) out.push(s);
+  }
+  return out.sort((a, b) => a.freq - b.freq);
+}
+
+function findPeak() {
+  const st = completedSteps();
+  if (st.length === 0) return null;
+  let k = 0; st.forEach((s, i) => { if (s.maxIncl > st[k].maxIncl) k = i; });
+  const p = { f: st[k].freq, fInterp: st[k].freq, mV: st[k].maxIncl, edge: k === 0 || k === st.length - 1 };
+  if (!p.edge) {
+    const y0 = st[k - 1].maxIncl, y1 = st[k].maxIncl, y2 = st[k + 1].maxIncl;
+    const den = y0 - 2 * y1 + y2;
+    const h = (st[k + 1].freq - st[k - 1].freq) / 2;
+    if (den < 0) p.fInterp = st[k].freq + 0.5 * (y0 - y2) / den * h;
+  }
+  return p;
+}
+
+// ====================== 測定の開始・終了 ======================
+async function startRun() {
+  const p = plan();
+  if (!p || !link) return;
+  run = { params: { ...cfg }, freqs: p.freqs, nSteps: p.n, dwellMs: Math.round(cfg.dwell * 10) * 100, startedAt: new Date(),
+          raw: [], byStep: new Map(), summary: new Map(), curStep: 0, offsetMv: NaN, finished: false, result: 0, started: false };
+  saved = true; lastData = null;
+  const buf = new ArrayBuffer(12), dv = new DataView(buf);
+  dv.setUint8(0, 1);
+  dv.setUint8(1, Math.round(cfg.lpf));
+  dv.setUint16(2, Math.round(cfg.fStart * 1000), true);
+  dv.setUint16(4, Math.round(cfg.fEnd * 1000), true);
+  dv.setUint16(6, Math.round(cfg.fStep * 1000), true);
+  dv.setUint16(8, Math.round(cfg.dwell * 10), true);
+  dv.setUint16(10, Math.round(cfg.amp * 10), true);
+  try {
+    await link.send(new Uint8Array(buf));
+    logMsg(`測定開始：${cfg.fStart}→${cfg.fEnd} Hz、刻み ${cfg.fStep} Hz、各 ${cfg.dwell} s、振幅 ±${cfg.amp}°、LPF ${cfg.lpf} Hz`);
+    setStateMsg('info', 'ゼロ点を測ってから加振を始めます。センサーと機体を静止させてください。');
+    requestWake();
+  } catch (e) { logMsg('送信に失敗：' + e.message); run = null; }
+  render(); updateButtons();
+}
+
+async function stopRun() {
+  if (!link) return;
+  try { await link.send(new Uint8Array([2])); logMsg('停止を送信'); } catch (e) { logMsg('送信に失敗：' + e.message); }
+}
+
+function finishRun(result) {
+  if (!run || run.finished) return;
+  run.finished = true; run.result = result; run.endedAt = new Date();
+  rebuildSummary();
+  releaseWake();
+  const pk = findPeak();
+  if (pk) logMsg(`ピーク：${pk.f.toFixed(2)} Hz（補間 ${pk.fInterp.toFixed(3)} Hz）、${toAccel(pk.mV).toFixed(3)} m/s²`);
+  render(); updateButtons();
+}
+
+async function requestWake() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {} }
+function releaseWake() { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; }
+
+// ====================== 重力による感度校正 ======================
+function beginCal(which) {
+  calCollect = { which, vals: [], until: performance.now() + 2000 };
+  $('calRes').textContent = `${which === 'up' ? 'Z 上向き' : 'Z 下向き'}を記録中…（2 秒）`;
+  updateButtons();
+}
+function finishCal() {
+  const c = calCollect; calCollect = null;
+  const v = c.vals.filter(Number.isFinite);
+  if (v.length < 3) { $('calRes').textContent = '値を受信できませんでした。接続を確認してください。'; updateButtons(); return; }
+  cal[c.which] = v.reduce((a, b) => a + b, 0) / v.length;
+  showCal(); updateButtons();
+}
+function showCal() {
+  const parts = [];
+  if (Number.isFinite(cal.up)) parts.push(`+1 g: ${cal.up.toFixed(1)} mV`);
+  if (Number.isFinite(cal.down)) parts.push(`−1 g: ${cal.down.toFixed(1)} mV`);
+  if (Number.isFinite(cal.up) && Number.isFinite(cal.down)) {
+    parts.push(`→ 感度 ${((cal.up - cal.down) / 2).toFixed(1)} mV/g、0 g 出力 ${((cal.up + cal.down) / 2).toFixed(1)} mV`);
+  }
+  $('calRes').textContent = parts.join('　');
+}
+$('btnCalUp').addEventListener('click', () => beginCal('up'));
+$('btnCalDown').addEventListener('click', () => beginCal('down'));
+$('btnCalApply').addEventListener('click', () => {
+  const s = (cal.up - cal.down) / 2;
+  if (!(s > 50)) { $('calRes').textContent = '+1 g の値が −1 g より十分大きくありません。向きを確認してやり直してください。'; return; }
+  cfg.sens = +s.toFixed(1); $('sens').value = cfg.sens; saveCfg(); rebuildSummary(); render();
+  logMsg(`感度を ${cfg.sens} mV/g に設定`);
+});
+$('btnZero').addEventListener('click', async () => { if (link) { try { await link.send(new Uint8Array([3])); } catch (e) { logMsg('送信に失敗：' + e.message); } } });
+
+// ====================== 表示 ======================
+function setStateMsg(kind, msg) { $('stateMsg').textContent = msg; $('stateMsg').dataset.kind = kind; }
+
+function renderStatus() {
+  const pill = $('statePill');
+  const busy = dev.state !== ST.IDLE;
+  pill.textContent = ST_LABEL[dev.state] || '—';
+  pill.className = 'pill ' + (dev.state === ST.RUNNING ? 'info' : busy ? 'warn' : (link ? 'ok' : ''));
+  $('rMean').innerHTML = (Number.isFinite(dev.mean) ? dev.mean.toFixed(1) : '—') + '<small>mV</small>';
+  $('rOffset').innerHTML = (dev.offsetValid ? dev.offset.toFixed(1) : '—') + '<small>mV</small>';
+  const d = dev.offsetValid && Number.isFinite(dev.mean) ? unitVal(toAccel(dev.mean - dev.offset)) : NaN;
+  $('rDev').innerHTML = (Number.isFinite(d) ? d.toFixed(3) : '—') + `<small>${unitName()}</small>`;
+  renderProgress();
+  updateButtons();
+}
+
+function renderProgress() {
+  const r = run;
+  const n = r ? r.nSteps : 0;
+  $('pStep').textContent = r ? `${r.started ? r.curStep + 1 : 0} / ${n}` : '—';
+  const f = dev.state === ST.IDLE ? NaN : (lastData && dev.state === ST.RUNNING ? lastData.freq : dev.freq);
+  $('pFreq').textContent = Number.isFinite(f) && f > 0 ? `${f.toFixed(2)} Hz` : '—';
+  $('pNow').textContent = lastData && dev.state === ST.RUNNING ? `${unitVal(toAccel(lastData.dev)).toFixed(3)} ${unitName()}` : '—';
+  let remain = NaN, frac = 0;
+  if (r && !r.finished) {
+    const dwell = r.dwellMs / 1000;
+    if (dev.state === ST.ZEROING || dev.state === ST.RAMP_UP || !r.started) remain = n * dwell + (ZERO_MS + 2 * RAMP_MS) / 1000;
+    else if (dev.state === ST.RUNNING && lastData) {
+      const done = lastData.step * dwell + (lastData.tWin + WIN_MS) / 1000;
+      remain = n * dwell - done + RAMP_MS / 1000; frac = done / (n * dwell);
+    } else if (dev.state === ST.RAMP_DOWN) { remain = RAMP_MS / 1000; frac = 1; }
+  } else if (r && r.finished) frac = r.result === 1 ? 1 : (r.raw.length ? (r.curStep + 1) / n : 0);
+  $('pRemain').textContent = Number.isFinite(remain) ? fmtDur(remain) : '—';
+  $('pBar').style.width = Math.max(0, Math.min(1, frac)) * 100 + '%';
+}
+
+function updateButtons() {
+  const connected = !!link && link.connected;
+  const idle = dev.state === ST.IDLE;
+  const running = run && !run.finished;
+  $('btnStart').disabled = !(connected && idle && plan() && !running && !calCollect);
+  $('btnStop').disabled = !(connected && (!idle || running));
+  for (const k of ['fStart', 'fEnd', 'fStep', 'dwell', 'amp', 'lpf']) $(k).disabled = !!running;
+  $('btnCalUp').disabled = $('btnCalDown').disabled = !(connected && idle && !running && !calCollect);
+  $('btnZero').disabled = !(connected && idle && !running);
+  $('btnCalApply').disabled = !(Number.isFinite(cal.up) && Number.isFinite(cal.down));
+  const has = run && run.raw.length > 0;
+  $('btnCsv').disabled = $('btnRaw').disabled = $('btnPng').disabled = !has;
+  $('btnConnect').hidden = connected || (link && link.kind === 'ble');
+  $('btnDisconnect').hidden = !link;
+  $('btnReconnect').hidden = !(link && link.kind === 'ble' && !link.connected);
+  $('btnDemo').disabled = !!link;
+  const pill = $('connPill');
+  if (!link) { pill.className = 'pill'; pill.textContent = '未接続'; }
+  else if (link.connected) { pill.className = 'pill ok'; pill.textContent = link.kind === 'demo' ? 'デモ装置' : `接続中：${link.name}`; }
+  else { pill.className = 'pill bad'; pill.textContent = '切断'; }
+}
+
+function renderTable() {
+  const tb = $('tbody');
+  if (!run || run.summary.size === 0) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;font-family:var(--font);color:var(--muted)">まだ記録がありません</td></tr>';
+    $('recCount').textContent = ''; return;
+  }
+  const pk = findPeak();
+  const rows = [...run.summary.values()].sort((a, b) => a.step - b.step);
+  const html = rows.map((s) => {
+    const live = !run.finished && s.step === run.curStep;
+    const a = s.nIncl ? toAccel(s.maxIncl) : NaN;
+    const cls = pk && !live && s.freq === pk.f ? 'is-peak' : (live ? 'is-now' : '');
+    return `<tr class="${cls}"><td>${s.freq.toFixed(2)}</td><td>${Number.isFinite(a) ? a.toFixed(4) : '—'}</td><td>${Number.isFinite(a) ? (a / G).toFixed(4) : '—'}</td><td>${s.nIncl ? s.maxIncl.toFixed(2) : '—'}</td><td>${s.nIncl}</td></tr>`;
+  });
+  tb.innerHTML = html.join('');
+  $('recCount').textContent = `${rows.length} 周波数・${run.raw.length} 区間`;
+}
+
+function renderPeak() {
+  const pk = findPeak();
+  const box = $('peakBox');
+  if (!pk) { box.innerHTML = '<span class="hint" style="margin:0">測定するとピーク（共振周波数の推定）がここに出ます。</span>'; return; }
+  const a = unitVal(toAccel(pk.mV));
+  box.innerHTML = `<span>ピーク周波数 <b>${pk.f.toFixed(2)} Hz</b></span>`
+    + (pk.edge ? '<span class="pill warn">範囲の端が最大です。範囲を広げてください</span>' : `<span>放物線補間 <b>${pk.fInterp.toFixed(3)} Hz</b></span>`)
+    + `<span>最大加速度 <b>${a.toFixed(3)} ${unitName()}</b></span>`;
+}
+
+// ---- グラフ ----
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function niceStep(range, target) {
+  const raw = range / target, p = Math.pow(10, Math.floor(Math.log10(raw))), r = raw / p;
+  return (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * p;
+}
+function drawChart(ctx, W, H, pal, opts = {}) {
+  const fontPx = opts.fontPx || 12;
+  const font = `${fontPx}px ${getComputedStyle(document.body).fontFamily}`;
+  ctx.fillStyle = pal.panel; ctx.fillRect(0, 0, W, H);
+  const top = opts.title ? fontPx * 4.2 : 14, L = fontPx * 5.2, R = 18, B = fontPx * 3.4;
+  if (opts.title) {
+    ctx.fillStyle = pal.ink; ctx.font = `bold ${Math.round(fontPx * 1.4)}px ${getComputedStyle(document.body).fontFamily}`; ctx.textAlign = 'left';
+    ctx.fillText(opts.title, L, fontPx * 1.8);
+    ctx.font = font; ctx.fillStyle = pal.muted; ctx.fillText(opts.subtitle || '', L, fontPx * 3.3);
+  }
+  const p = run ? { fMin: Math.min(run.params.fStart, run.params.fEnd), fMax: Math.max(run.params.fStart, run.params.fEnd) } : plan();
+  let x0 = p ? p.fMin : 0, x1 = p ? p.fMax : 5;
+  if (x1 - x0 < 0.2) { x0 -= 0.1; x1 += 0.1; }
+  const pad = (x1 - x0) * 0.02; x0 -= pad; x1 += pad;
+  const pts = run ? [...run.summary.values()].filter((s) => s.nIncl > 0 || s.nAll > 0) : [];
+  const yv = (s) => unitVal(toAccel(s.nIncl ? s.maxIncl : s.maxAll));
+  let ymax = 0; for (const s of pts) ymax = Math.max(ymax, yv(s));
+  if (!(ymax > 0)) ymax = cfg.unit === 'g' ? 0.5 : 5;
+  const ys = niceStep(ymax * 1.1, 5); ymax = Math.ceil(ymax * 1.1 / ys) * ys;
+  const X = (f) => L + (W - L - R) * (f - x0) / (x1 - x0);
+  const Y = (v) => top + (H - top - B) * (1 - v / ymax);
+  ctx.font = font; ctx.lineWidth = 1;
+  // y grid
+  for (let v = 0; v <= ymax + 1e-9; v += ys) {
+    ctx.strokeStyle = v === 0 ? pal.line : pal.soft; ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(W - R, Y(v)); ctx.stroke();
+    ctx.fillStyle = pal.muted; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    ctx.fillText(+v.toPrecision(6) + '', L - 6, Y(v));
+  }
+  // x grid
+  const xs = niceStep(x1 - x0, 8);
+  for (let f = Math.ceil(x0 / xs) * xs; f <= x1 + 1e-9; f += xs) {
+    ctx.strokeStyle = pal.soft; ctx.beginPath(); ctx.moveTo(X(f), top); ctx.lineTo(X(f), H - B); ctx.stroke();
+    ctx.fillStyle = pal.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(+f.toFixed(3) + '', X(f), H - B + 6);
+  }
+  ctx.fillStyle = pal.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('周波数 [Hz]', L + (W - L - R) / 2, H - 6);
+  ctx.save(); ctx.translate(fontPx * 1.1, top + (H - top - B) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center';
+  ctx.fillText(`最大加速度 [${unitName()}]`, 0, 0); ctx.restore();
+  if (!pts.length) {
+    ctx.fillStyle = pal.muted; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(link ? '「測定開始」を押すと、ここに周波数ごとの最大値が描かれます' : '装置に接続するか、デモで試してください', L + (W - L - R) / 2, top + (H - top - B) / 2);
+    return;
+  }
+  const done = pts.filter((s) => s.nIncl > 0 && (run.finished || s.step < run.curStep)).sort((a, b) => a.freq - b.freq);
+  // area + line
+  if (done.length > 1) {
+    ctx.beginPath(); ctx.moveTo(X(done[0].freq), Y(0));
+    for (const s of done) ctx.lineTo(X(s.freq), Y(yv(s)));
+    ctx.lineTo(X(done[done.length - 1].freq), Y(0)); ctx.closePath(); ctx.fillStyle = pal.seriesSoft; ctx.fill();
+    ctx.beginPath(); done.forEach((s, i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, X(s.freq), Y(yv(s))));
+    ctx.strokeStyle = pal.series; ctx.lineWidth = 2; ctx.stroke();
+  }
+  const r = Math.max(3, fontPx * 0.3);
+  for (const s of done) { ctx.beginPath(); ctx.arc(X(s.freq), Y(yv(s)), r, 0, 2 * Math.PI); ctx.fillStyle = pal.series; ctx.fill(); }
+  // 測定中の点
+  if (!run.finished) {
+    const cur = run.summary.get(run.curStep);
+    if (cur) {
+      ctx.beginPath(); ctx.arc(X(cur.freq), Y(yv(cur)), r + 1.5, 0, 2 * Math.PI);
+      ctx.strokeStyle = pal.accent; ctx.lineWidth = 2; ctx.stroke();
+      ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(X(cur.freq), top); ctx.lineTo(X(cur.freq), H - B); ctx.stroke(); ctx.setLineDash([]);
+    }
+  }
+  // ピーク
+  const pk = findPeak();
+  if (pk && done.length >= 3) {
+    const xp = X(pk.fInterp), yp = Y(unitVal(toAccel(pk.mV)));
+    ctx.strokeStyle = pal.ink; ctx.lineWidth = 1; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(xp, yp); ctx.lineTo(xp, H - B); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = pal.ink; ctx.textBaseline = 'bottom';
+    const label = `ピーク ${pk.fInterp.toFixed(3)} Hz`;
+    ctx.textAlign = xp > W - 160 ? 'right' : 'left';
+    ctx.fillText(label, xp + (ctx.textAlign === 'left' ? 6 : -6), Math.max(top + fontPx + 2, yp - 6));
+  }
+}
+function palette(forceLight) {
+  if (forceLight) return { panel: '#ffffff', ink: '#16202a', muted: '#5a6673', line: '#c7d0d8', soft: '#e7ecf0', series: '#1f5c99', seriesSoft: 'rgba(31,92,153,0.14)', accent: '#c0141c' };
+  return { panel: css('--panel'), ink: css('--ink'), muted: css('--muted'), line: css('--line'), soft: css('--soft'), series: css('--series'), seriesSoft: css('--series-soft'), accent: css('--accent') };
+}
+function renderChart() {
+  const c = $('chart'), dpr = window.devicePixelRatio || 1, rect = c.getBoundingClientRect();
+  const w = Math.round(rect.width * dpr), h = Math.round(rect.height * dpr);
+  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawChart(ctx, rect.width, rect.height, palette(false));
+}
+
+let renderQueued = false;
+function scheduleRender() { if (!renderQueued) { renderQueued = true; requestAnimationFrame(() => { renderQueued = false; render(); }); } }
+function render() { renderChart(); renderTable(); renderPeak(); renderProgress(); updateButtons(); }
+new ResizeObserver(() => renderChart()).observe($('chart'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+
+// ====================== ダウンロード ======================
+function stamp(d) { const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+function localTime(d) { return d ? d.toLocaleString('ja-JP', { hour12: false }) : ''; }
+function download(name, blob) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function metaRows() {
+  const P = run.params, pk = findPeak();
+  return [
+    ['# 試験', '魚型ロボット 周波数応答試験（サーボ角度加振）'],
+    ['# 開始日時', localTime(run.startedAt)], ['# 終了日時', localTime(run.endedAt)],
+    ['# 終了理由', run.finished ? (RES_MSG[run.result] ? RES_MSG[run.result][1] : run.result) : '測定中'],
+    ['# 周波数範囲_Hz', `${P.fStart} → ${P.fEnd}`], ['# 刻み_Hz', P.fStep], ['# 測定時間_s', P.dwell],
+    ['# サーボ振幅_deg', P.amp], ['# ローパス_Hz', P.lpf], ['# 集計から除く時間_s', cfg.settle],
+    ['# 感度_mV_per_g', cfg.sens], ['# ゼロ点_mV', Number.isFinite(run.offsetMv) ? run.offsetMv.toFixed(2) : ''],
+    ['# ピーク周波数_Hz', pk ? pk.f.toFixed(3) : ''], ['# ピーク周波数_放物線補間_Hz', pk && !pk.edge ? pk.fInterp.toFixed(4) : ''],
+    ['# ピーク加速度_m_s2', pk ? toAccel(pk.mV).toFixed(4) : ''],
+  ];
+}
+function toCsv(rows) { return '﻿' + rows.map((r) => r.map((v) => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(',')).join('\r\n') + '\r\n'; }
+$('btnCsv').addEventListener('click', () => {
+  const rows = metaRows(); rows.push([]);
+  rows.push(['周波数_Hz', '最大加速度_m_s2', '最大加速度_g', '最大偏差_mV', '集計区間数', '全区間の最大加速度_m_s2']);
+  for (const s of [...run.summary.values()].sort((a, b) => a.step - b.step)) {
+    const a = s.nIncl ? toAccel(s.maxIncl) : NaN, aAll = toAccel(s.maxAll);
+    rows.push([s.freq.toFixed(3), Number.isFinite(a) ? a.toFixed(5) : '', Number.isFinite(a) ? (a / G).toFixed(5) : '', s.nIncl ? s.maxIncl.toFixed(3) : '', s.nIncl, aAll.toFixed(5)]);
+  }
+  download(`fishvib_${stamp(run.startedAt)}_summary.csv`, new Blob([toCsv(rows)], { type: 'text/csv' }));
+  saved = true; logMsg('集計 CSV を保存');
+});
+$('btnRaw').addEventListener('click', () => {
+  const rows = metaRows(); rows.push([]);
+  rows.push(['装置時刻_s', 'ステップ', '周波数_Hz', 'ステップ内時刻_s', '区間最大加速度_m_s2', '区間最大偏差_mV', '集計対象']);
+  const settleMs = cfg.settle * 1000;
+  for (const r of run.raw) rows.push([r.devTime.toFixed(3), r.step, r.freq.toFixed(3), (r.tWin / 1000).toFixed(3), toAccel(r.dev).toFixed(5), r.dev.toFixed(3), r.tWin >= settleMs ? 1 : 0]);
+  download(`fishvib_${stamp(run.startedAt)}_raw.csv`, new Blob([toCsv(rows)], { type: 'text/csv' }));
+  saved = true; logMsg('生データ CSV を保存');
+});
+$('btnPng').addEventListener('click', () => {
+  const W = 1600, H = 1000, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const P = run.params, pk = findPeak();
+  const sub = `${localTime(run.startedAt)}　${P.fStart}→${P.fEnd} Hz（刻み ${P.fStep} Hz、各 ${P.dwell} s）　振幅 ±${P.amp}°　LPF ${P.lpf} Hz　感度 ${cfg.sens} mV/g`
+    + (pk ? `　ピーク ${pk.fInterp.toFixed(3)} Hz` : '');
+  drawChart(c.getContext('2d'), W, H, palette(true), { fontPx: 22, title: '周波数応答：最大加速度（Z 軸、絶対値）', subtitle: sub });
+  c.toBlob((b) => { download(`fishvib_${stamp(run.startedAt)}_graph.png`, b); logMsg('グラフ PNG を保存'); }, 'image/png');
+});
+window.addEventListener('beforeunload', (e) => { if (run && run.raw.length && !saved) { e.preventDefault(); e.returnValue = ''; } });
+
+// ====================== Web Bluetooth ======================
+class BleLink {
+  constructor() { this.kind = 'ble'; this.connected = false; this.name = ''; this.device = null; this.cmd = null; }
+  async open() {
+    this.device = await navigator.bluetooth.requestDevice({ filters: [{ namePrefix: NAME_PREFIX }, { services: [SVC_UUID] }], optionalServices: [SVC_UUID] });
+    this.name = this.device.name || NAME_PREFIX;
+    this.device.addEventListener('gattserverdisconnected', () => {
+      this.connected = false; logMsg('Bluetooth が切断されました');
+      if (run && !run.finished) finishRun(3);
+      setStateMsg('bad', '切断されました。「再接続」を押してください。測定済みのデータは残っています。');
+      updateButtons(); renderStatus();
+    });
+    await this.connectGatt();
+  }
+  async connectGatt() {
+    const server = await this.device.gatt.connect();
+    const svc = await server.getPrimaryService(SVC_UUID);
+    const data = await svc.getCharacteristic(DATA_UUID);
+    this.cmd = await svc.getCharacteristic(CMD_UUID);
+    data.addEventListener('characteristicvaluechanged', (e) => onPacket(e.target.value));
+    await data.startNotifications();
+    this.connected = true; statusSeen = false;
+    logMsg(`接続しました：${this.name}`);
+  }
+  async send(bytes) {
+    if (!this.connected) throw new Error('未接続です');
+    if (this.cmd.writeValueWithResponse) await this.cmd.writeValueWithResponse(bytes); else await this.cmd.writeValue(bytes);
+  }
+  close() { try { this.device && this.device.gatt.connected && this.device.gatt.disconnect(); } catch (e) {} this.connected = false; }
+}
+
+function bleAvailabilityNotice() {
+  if (!('bluetooth' in navigator)) {
+    const n = $('bleNotice'); n.hidden = false;
+    n.textContent = 'このブラウザでは Web Bluetooth が使えません。パソコンまたは Android の Chrome か Edge で開いてください（iPhone/iPad は Bluefy などの対応ブラウザが必要です）。'
+      + (window.isSecureContext ? '' : ' また、https か http://localhost で開く必要があります。');
+    return false;
+  }
+  return true;
+}
+
+$('btnConnect').addEventListener('click', async () => {
+  if (!bleAvailabilityNotice()) return;
+  const l = new BleLink();
+  try { await l.open(); link = l; setStateMsg('ok', '接続しました。条件を確認して「測定開始」を押してください。'); }
+  catch (e) { if (e.name !== 'NotFoundError') logMsg('接続できませんでした：' + e.message); }
+  updateButtons(); renderStatus(); render();
+});
+$('btnReconnect').addEventListener('click', async () => {
+  try { await link.connectGatt(); setStateMsg('ok', '再接続しました。'); } catch (e) { logMsg('再接続できませんでした：' + e.message); }
+  updateButtons(); renderStatus();
+});
+$('btnDisconnect').addEventListener('click', () => {
+  if (link) link.close();
+  link = null; dev = { ...dev, state: ST.IDLE, offsetValid: false, mean: NaN };
+  logMsg('切断しました'); updateButtons(); renderStatus(); render();
+});
+$('btnStart').addEventListener('click', startRun);
+$('btnStop').addEventListener('click', stopRun);
+
+// ====================== デモ装置（ファームウェアと同じ形式のパケットを生成） ======================
+class DemoLink {
+  constructor(speed) {
+    this.kind = 'demo'; this.connected = true; this.name = 'デモ'; this.speed = speed;
+    this.state = ST.IDLE; this.result = 0; this.offset = 1251.3; this.offsetValid = false;
+    this.fn = 2.35; this.zeta = 0.06; this.xs = 0.05;        // 仮想機体：共振 2.35 Hz、減衰比 0.06、センサー位置 50 mm
+    this.t = 0; this.stateT = 0; this.cmd = null; this.lastWall = performance.now(); this.msMon = 0; this.amp = 0;
+    this.timer = setInterval(() => this.tick(), 20);
+  }
+  async send(bytes) { this.cmd = new Uint8Array(bytes); }
+  close() { clearInterval(this.timer); this.connected = false; }
+  status() {
+    const b = new ArrayBuffer(20), d = new DataView(b);
+    d.setUint8(0, 2); d.setUint8(1, this.state); d.setUint8(2, this.result); d.setUint8(3, this.offsetValid ? 1 : 0);
+    d.setUint16(4, this.step || 0, true); d.setUint16(6, this.n || 0, true); d.setUint16(8, Math.round((this.f || 0) * 1000), true);
+    d.setUint16(10, Math.round(this.amp * 10), true);
+    const tilt = this.state === ST.IDLE && calCollect ? (calCollect.which === 'up' ? 503.2 : -496.8) : 0;   // 校正ボタンの体験用
+    d.setFloat32(12, this.offset + (Math.random() - 0.5) * 1.2 + tilt, true);
+    d.setFloat32(16, this.offset, true);
+    onPacket(d);
+  }
+  respMv(f, tWin) {   // 角度加振（基部加振）の絶対加速度の振幅 → mV
+    const W = 2 * Math.PI * f, r = f / this.fn, z = this.zeta;
+    const T = Math.sqrt(1 + (2 * z * r) ** 2) / Math.sqrt((1 - r * r) ** 2 + (2 * z * r) ** 2);
+    const a = this.xs * (this.A * Math.PI / 180) * W * W * T;
+    const trans = Math.exp(-z * 2 * Math.PI * this.fn * tWin / 1000) * 0.25 * a;
+    return Math.min(1240, (a + trans) / G * 500 * (0.985 + 0.03 * Math.random()) + Math.random() * 1.5);
+  }
+  tick() {
+    const now = performance.now(); let dt = (now - this.lastWall) * this.speed; this.lastWall = now;
+    if (this.cmd) {
+      const c = this.cmd; this.cmd = null;
+      if (c[0] === 1 && this.state === ST.IDLE) {
+        const d = new DataView(c.buffer);
+        this.lpf = d.getUint8(1); this.fs = d.getUint16(2, true) / 1000; const fe = d.getUint16(4, true) / 1000; const df = d.getUint16(6, true) / 1000;
+        this.dwell = d.getUint16(8, true) * 100; this.A = d.getUint16(10, true) / 10;
+        this.n = Math.round(Math.abs(fe - this.fs) / df) + 1; this.df = (fe >= this.fs ? 1 : -1) * df;
+        this.result = 0; this.f = this.fs; this.step = 0; this.zeroOnly = false; this.go(ST.ZEROING);
+      } else if (c[0] === 2) {
+        if (this.state === ST.ZEROING) { this.result = 2; this.go(ST.IDLE); }
+        else if (this.state === ST.RAMP_UP || this.state === ST.RUNNING) { this.stopRes = 2; this.flush(); this.go(ST.RAMP_DOWN); }
+      } else if (c[0] === 3 && this.state === ST.IDLE) { this.zeroOnly = true; this.go(ST.ZEROING); }
+    }
+    while (dt > 0) {
+      const step = Math.min(dt, 10); dt -= step; this.stateT += step; this.msMon += step;
+      if (this.state === ST.IDLE) { if (this.msMon >= 200) { this.msMon = 0; this.status(); } }
+      else if (this.state === ST.ZEROING) {
+        if (this.msMon >= 200) { this.msMon = 0; this.status(); }
+        if (this.stateT >= ZERO_MS) { this.offsetValid = true; if (this.zeroOnly) { this.result = 6; this.go(ST.IDLE); } else this.go(ST.RAMP_UP); }
+      } else if (this.state === ST.RAMP_UP) {
+        this.amp = this.A * Math.min(1, this.stateT / RAMP_MS);
+        if (this.stateT >= RAMP_MS) { this.runT = 0; this.step = 0; this.f = this.fs; this.win = { start: 0, max: 0, cnt: 0 }; this.go(ST.RUNNING); }
+      } else if (this.state === ST.RUNNING) {
+        this.runT += step;
+        const s = Math.floor(this.runT / this.dwell);
+        if (s >= this.n) { this.stopRes = 1; this.flush(); this.go(ST.RAMP_DOWN); continue; }
+        if (s !== this.step) { this.flush(); this.step = s; this.f = +(this.fs + this.df * s).toFixed(4); }
+        const inStep = this.runT - s * this.dwell;
+        if (this.win.cnt === 0) this.win.start = Math.max(0, inStep - step);
+        this.win.cnt += step; this.win.max = Math.max(this.win.max, this.respMv(this.f, inStep));
+        if (this.win.cnt >= WIN_MS) this.flush();
+        if (this.msMon >= 1000) { this.msMon = 0; this.status(); }
+      } else if (this.state === ST.RAMP_DOWN) {
+        this.amp = this.A * Math.max(0, 1 - this.stateT / RAMP_MS);
+        if (this.stateT >= RAMP_MS) { this.amp = 0; this.result = this.stopRes; this.go(ST.IDLE); }
+      }
+    }
+  }
+  flush() {
+    if (!this.win || this.win.cnt <= 0) return;
+    const b = new ArrayBuffer(12), d = new DataView(b);
+    d.setUint8(0, 1); d.setUint8(1, this.state); d.setUint16(2, this.step, true); d.setUint16(4, Math.round(this.f * 1000), true);
+    d.setUint16(6, Math.max(0, Math.round(this.win.start)), true); d.setFloat32(8, this.win.max, true);
+    onPacket(d);
+    this.win = { start: 0, max: 0, cnt: 0 };
+  }
+  go(s) { this.state = s; this.stateT = 0; this.msMon = 0; if (s === ST.IDLE) this.amp = 0; this.status(); }
+}
+
+$('btnDemo').addEventListener('click', () => {
+  statusSeen = false;
+  link = new DemoLink(parseFloat($('demoSpeed').value));
+  logMsg(`デモ装置に接続（${$('demoSpeed').value}倍速、仮想共振 2.35 Hz）`);
+  setStateMsg('info', 'デモ装置です。実機と同じ形式のデータを生成します。');
+  updateButtons(); renderStatus(); render();
+});
+
+// テスト用の入口（画面の動作には影響しません）
+window.__fishvib = { onPacket, get run() { return run; }, findPeak, toAccel,
+  useTestLink() { statusSeen = false; link = { kind: 'demo', connected: true, name: 'test', sent: [], async send(b) { this.sent.push([...b]); }, close() {} }; updateButtons(); return link; } };
+
+bleAvailabilityNotice();
+updateDerived();
+render();
+logMsg('準備完了。「装置に接続」を押してください。');
+</script>
+</body>
+</html>
